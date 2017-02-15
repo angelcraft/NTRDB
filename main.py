@@ -7,7 +7,7 @@ from uuid import uuid4
 from json import dumps
 import hashlib
 from validators import url
-global plugins
+global plugins, index, messagehtml
 if exists('plugins.pickle'):
     with open('plugins.pickle', 'rb') as f:
         plugins = pickle.load(f)
@@ -21,6 +21,17 @@ else:
     print(
         "Plugin database wasnt found. The one were created, to apply it please restart NTRDB")
     raise SystemExit
+with open('html/index.html') as f:
+    index = f.read()
+with open('html/message.html') as f:
+    messagehtml = f.read()
+with open('html/search.html') as f:
+    search = f.read()
+with open('html/addfile.html') as f:
+    addfile = f.read()
+with open('html/remove.html') as f:
+    remove = f.read()
+
 
 
 def computeMD5hash(string):
@@ -48,23 +59,6 @@ class myHandler(BaseHTTPRequestHandler):
         table = ""
         message = ""
         isSearch = False
-        addfile = """
-        <form method="get">
-        <p>Enter a URL to .plg file: <input type="text" name="plg" autocomplete="off"></p>
-        <p>Enter title ID of the game: <input type="text" name="titid" autocomplete="off"></p>
-        <p>Enter name of the plugin: <input type="text" name="name" autocomplete="off"></p>
-        <input type="submit" value="Submit NTR Plugin">
-        </form>"""
-        search = """
-        <form method="get">
-        <p width=100%%><input type="text" name="search" autocomplete="off"><input type="submit" value="Search!"></p>
-        </form>
-        """
-        remove = """
-        <form method="get">
-        <p>Enter a Removal ID: <input type="text" name="rid" autocomplete="off"></p>
-        <input type="submit" value="Remove your plugin">
-        </form>"""
         path = self.path[1:]
         if not len(path.split("?")) == 1:
             data = path.split("?")[1].split("&")
@@ -178,86 +172,13 @@ class myHandler(BaseHTTPRequestHandler):
         self.end_headers()
         # Send the html message
         if message == "":
-            page = """
-            <html>
-            <head>
-            <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
-            <title>NTR Plugins Database</title>
-            <style>
-            body {
-                font-family: 'Open Sans', sans-serif;
-            }
-            </style>
-            </head>
-            <body>
-            <a href="https://github.com/OctoNezd/NTRDB"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
-            <h1>NTR plugins database</h1>
-            <hr>
-            <table width=100%%>
-            <tr>
-            <td>
-            <h3>Submit your NTR Plugin!</h3>
-            %s
-            </td>
-            <td>
-            <h3>Remove your NTR Plugin</h3>
-            %s
-            </td>
-            </tr>
-            </table>
-            <hr>
-            %s
-            <table table border="1" cellpadding="5" cellspacing="5" width=100%%>
-            <tr>
-            <th>Game's TitleID</th>
-            <th>Plugins name</th>
-            <th>Added</th>
-            <th>Download</th>
-            </tr>
-            %s
-            </table>
-            </body>
-            </html
-            """ % (addfile, remove, search, table)
+            page = index %(addfile, remove, search, table)
         else:
             if succ:
                 color = 'green'
             else:
                 color = 'red'
-            page = """
-            <html>
-            <head>
-            <title>NTR Plugins Database</title>
-            <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
-            <style>
-            body {
-                font-family: 'Open Sans', sans-serif;
-                margin-top: 0;
-                margin-left: 25%%;
-                margin-right: 25%%;
-            }
-            div {
-                background-color: #f7f7f7;
-                border: 2px solid;
-                border-radius: 10px;
-                border-top-left-radius: 0;
-                border-top-right-radius: 0;
-                border-top: 6px solid %s;
-                border-bottom: 2px solid;
-            }
-            </style>
-            </head>
-            <body>
-            <center>
-            <div><h2>
-            %s
-            </h2>
-            <a href="/index.html">Return to main page</a>
-            </div>
-            </center>
-            </body>
-            </html>
-            """ % (color, message)
+            page = messagehtml % (color, message)
         self.wfile.write(bytes(page, 'utf-8'))
 
     # Handler for the GET requests

@@ -182,6 +182,7 @@ class myHandler(BaseHTTPRequestHandler):
             <html>
             <head>
             <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+            <title>NTR Plugins Database</title>
             <style>
             body {
                 font-family: 'Open Sans', sans-serif;
@@ -226,6 +227,7 @@ class myHandler(BaseHTTPRequestHandler):
             page = """
             <html>
             <head>
+            <title>NTR Plugins Database</title>
             <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
             <style>
             body {

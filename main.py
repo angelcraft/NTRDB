@@ -6,6 +6,8 @@ from urllib.parse import unquote
 from uuid import uuid4
 from json import dumps
 import hashlib
+from socketserver import ThreadingMixIn
+import threading
 from validators import url
 global plugins, index, messagehtml
 if exists('plugins.pickle'):
@@ -189,10 +191,14 @@ class myHandler(BaseHTTPRequestHandler):
             self.api()
 
 
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+    """Handle requests in a separate thread."""
+
+
 try:
     # Create a web server and define the handler to manage the
     # incoming request
-    server = HTTPServer(('', 8080), myHandler)
+    server = ThreadedHTTPServer(('', 8080), myHandler)
     print('Started httpserver')
 
     # Wait forever for incoming htto requests

@@ -55,6 +55,12 @@ class myHandler(BaseHTTPRequestHandler):
             if not item == 0:
                 plugin = copy['ids'][item]
                 apidata[item] = plugin
+                try:
+                    del apidata[item]["__removal_id"]
+                except Exception:
+                    pass
+                else:
+                    pass
         print(plugins)
         print(copy)
         self.wfile.write(bytes(dumps(apidata), 'utf-8'))

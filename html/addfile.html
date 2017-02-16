@@ -1,23 +1,32 @@
 <form method="get">
   <div class="form-group">
-    <label for="downlink">Plugin name</label>
-    <input type="text" class="form-control" id="name" placeholder="Cool NTR plugin!">
+    <label for="id">Plugin name</label>
+    <input type="text" class="form-control" id="name" name="name" required placeholder="Cool NTR plugin!">
   </div>
   <div class="form-group">
-    <label for="downlink">Developer name</label>
-    <input type="text" class="form-control" id="developer" placeholder="Developer">
+    <label for="desc">Description</label>
+    <textarea class="form-control" rows="3" id="desc" name="desc" required=""></textarea>
   </div>
   <div class="form-group">
-    <label for="downlink">Game's TitleID(16 symbols long, optional)</label>
-    <input type="text" class="form-control" id="tid" placeholder="000400000017C300">
+    <label for="version">Version(numbers only)</label>
+    <input type="text" class="form-control" id="version" name="ver" placeholder="0" required="" pattern="^[ 0-9]+$">
   </div>
   <div class="form-group">
-    <label for="downlink">Site of plugin(optional)</label>
-    <input type="text" class="form-control" id="plgsite" placeholder="http://example.com/">
+    <label for="developer">Developer name</label>
+    <input type="text" class="form-control" id="developer" name="developer" placeholder="Developer", required>
   </div>
   <div class="form-group">
-    <label for="downlink">Download link</label>
-    <input type="text" class="form-control" id="plgsite" placeholder="http://example.com/example.plg">
+    <label for="tid">Game's TitleID(16 symbols long, optional if there is none the game will show up as Not Game)</label>
+    <input type="text" class="form-control" id="tid" name="tid" placeholder="000400000017C300">
   </div>
-  <button type="submit" class="btn btn-default">Submit your plugin!</button>
+  <div class="form-group">
+    <label for="site">Site or forum thread of plugin</label>
+    <input type="text" class="form-control" id="site" name="devsite" placeholder="http://example.com/" required="">
+  </div>
+  <div class="form-group">
+    <label for="link">Download link</label>
+    <input type="text" class="form-control" id="link" name="link" placeholder="http://example.com/example.plg" required>
+  </div>
+  <input type="hidden" name='add' value="1">
+  <button type="submit" class="btn btn-primary">Submit your plugin!</button>
 </form>

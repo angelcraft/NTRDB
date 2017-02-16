@@ -200,9 +200,13 @@ class myHandler(BaseHTTPRequestHandler):
             for item in plugins['ids']:
                 if not item == 0:
                     item = plugins['ids'][item]
+                    if not item["TitleID"] == "Not game":
+                        name = getgamebytid(item["TitleID"])
+                    else:
+                        name = ""
                     table = table + "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td><a href=\"%s\">Download</a></td></tr>" % (
                         item["TitleID"],
-                        getgamebytid(item["TitleID"]),
+                        name,
                         item["name"],
                         item["added"],
                         item['plg']

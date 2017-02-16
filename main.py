@@ -49,8 +49,6 @@ class myHandler(BaseHTTPRequestHandler):
         self.end_headers()
         apidata = {}
         copy = dict(plugins)
-        print(plugins)
-        print(copy)
         for item in copy['ids']:
             if not item == 0:
                 plugin = copy['ids'][item]
@@ -61,8 +59,6 @@ class myHandler(BaseHTTPRequestHandler):
                     pass
                 else:
                     pass
-        print(plugins)
-        print(copy)
         self.wfile.write(bytes(dumps(apidata), 'utf-8'))
 
     def user(self):

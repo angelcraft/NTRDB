@@ -160,7 +160,7 @@ class myHandler(BaseHTTPRequestHandler):
                         num = item
                         plugin = plugins[item]
                         plugin['id'] = num
-                        if str(plugin['TitleID']).startswith(query) or query in str(plugin['name']) or query in str(getgamebytid(plugin["TitleID"])):
+                        if str(plugin['TitleID']).startswith(query) or query.upper() in str(plugin['name']).upper() or query.upper() in str(getgamebytid(plugin["TitleID"])).upper():
                             results.append(plugin)
                 for item in results:
                     if not item["TitleID"] == "Not game":

@@ -50,6 +50,7 @@ for item in plugins:
     if not item == 0:
         if not 'pic' in plugins[item]:
             plugins[item]['pic'] = ""
+            plugins[item]['TitleID'] = plugins[item]['TitleID'].upper()
 with open('plugins.pickle', 'wb') as f:
     pickle.dump(plugins, f)
 version = str(
@@ -206,7 +207,7 @@ class myHandler(BaseHTTPRequestHandler):
         parsed = parseURL(self.path)
         if 'add' in parsed:
             plgp = parsed["link"]
-            titleid = parsed['tid']
+            titleid = parsed['tid'].upper()
             plugname = parsed['name']
             developer = parsed['developer']
             devsite = parsed['devsite']

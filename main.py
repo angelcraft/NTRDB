@@ -48,12 +48,15 @@ class myHandler(BaseHTTPRequestHandler):
         self.send_header('Content-type', 'application/json')
         self.end_headers()
         apidata = {}
-        for item in plugins['ids']:
+        copy = dict(plugins)
+        print(plugins)
+        print(copy)
+        for item in copy['ids']:
             if not item == 0:
-                plugin = plugins['ids'][item]
+                plugin = copy['ids'][item]
                 apidata[item] = plugin
-                del apidata[item]["__removal_id"]
-
+        print(plugins)
+        print(copy)
         self.wfile.write(bytes(dumps(apidata), 'utf-8'))
 
     def user(self):
@@ -107,11 +110,10 @@ class myHandler(BaseHTTPRequestHandler):
                                                                'plg': unquote(plgp),
                                                                'added': now.strftime("%Y-%m-%d %H:%M"),
                                                                'timestamp': now.timestamp(),
-                                                               '__removal_id': computeMD5hash(removal_id)
                                                                }
                     with open('plugins.pickle', 'wb') as f:
                         pickle.dump(plugins, f)
-                    message = "Added your plugin! Removal ID is:{}. Store it somewhere;It used to remove plugin".format(
+                    message = "Added your plugin!".format(
                         removal_id) + message
                     succ = True
             if 'gid' in parsed:
@@ -126,6 +128,7 @@ class myHandler(BaseHTTPRequestHandler):
                     succ = False
                 else:
                     isSearch = True
+            """
             if 'rid' in parsed:
                 rid = computeMD5hash(parsed['rid'])
                 succ = False
@@ -141,6 +144,7 @@ class myHandler(BaseHTTPRequestHandler):
                 if not succ:
                     message = "No plugin which matches this removal ID found"
                     succ = False
+            """
             if 'search' in parsed:
                 query = parsed['search']
                 isSearch = True

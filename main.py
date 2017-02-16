@@ -51,6 +51,7 @@ for item in plugins:
         if not 'pic' in plugins[item]:
             plugins[item]['pic'] = ""
             plugins[item]['TitleID'] = plugins[item]['TitleID'].upper()
+            print(plugins[item]['TitleID'])
 with open('plugins.pickle', 'wb') as f:
     pickle.dump(plugins, f)
 version = str(

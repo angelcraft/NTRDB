@@ -45,6 +45,13 @@ for item in titles:
     tids.append([item[1].text, item[8].text])
 del titles
 print("DONE!")
+print("Checking DB for required keys...")
+for item in plugins:
+    if not item == 0:
+        if not 'pic' in plugins[item]:
+            plugins[item]['pic'] = ""
+with open('plugins.pickle', 'wb') as f:
+    pickle.dump(plugins, f)
 version = str(
     check_output('git log -n 1 --pretty=format:"%h"', shell=True), 'utf-8')
 
@@ -95,6 +102,10 @@ class myHandler(BaseHTTPRequestHandler):
                 dlink = str(item['plg'])
                 descr = str(item['desc'])
                 cpb = str(item['compatible'])
+                if not str(item['pic']) == "":
+                    pic = "<p>Screenshot:</p><img src=\"%s\">" % (str(item['pic']))
+                else:
+                    pic = ""
                 succ = True
         else:
             succ = False
@@ -104,7 +115,7 @@ class myHandler(BaseHTTPRequestHandler):
             self.end_headers()
             page = base % (version,
                            desc % (
-                               name, cpb, ver, dev, gamename, tid, devsite, dlink, descr)
+                               name, cpb, ver, dev, gamename, tid, devsite, dlink, descr, pic)
                            )
         else:
             self.send_response(400)
@@ -201,6 +212,7 @@ class myHandler(BaseHTTPRequestHandler):
             desc = parsed['desc']
             ver = parsed['ver']
             cpb = parsed['ctype']
+            pic = parsed['pic']
             badreq = False
             if plgp == "":
                 message = "You havent entered path to plg file!"
@@ -240,7 +252,8 @@ class myHandler(BaseHTTPRequestHandler):
                                              'added': now.strftime("%Y-%m-%d %H:%M"),
                                              'timestamp': now.timestamp(),
                                              'version': ver,
-                                             'compatible': cpb
+                                             'compatible': cpb,
+                                             'pic':pic
                                              }
                 with open('plugins.pickle', 'wb') as f:
                     pickle.dump(plugins, f)
@@ -259,14 +272,23 @@ class myHandler(BaseHTTPRequestHandler):
         self.wfile.write(bytes(page, 'utf-8'))
 
     def do_GET(self):
-        if self.path.startswith('/api'):
-            self.api()
-        elif self.path.startswith('/additem'):
-            self.additem()
-        elif self.path.startswith('/description'):
-            self.description()
-        else:
-            self.index()
+        try:
+            if self.path.startswith('/api'):
+                self.api()
+            elif self.path.startswith('/additem'):
+                self.additem()
+            elif self.path.startswith('/description'):
+                self.description()
+            else:
+                self.index()
+        except Exception as e:
+            print(e)
+            self.send_response(500)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            page = base % (version, messagehtml %
+                           ('danger', 'Oops! An error occured when processing your request!'))
+            self.wfile.write(bytes(page, 'utf-8'))
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):

@@ -8,6 +8,8 @@ from json import dumps
 import hashlib
 from socketserver import ThreadingMixIn
 import threading
+import xml.etree.ElementTree as ET
+from urllib.request import urlopen
 from validators import url
 global plugins, index, messagehtml
 if exists('plugins.pickle'):
@@ -33,6 +35,26 @@ with open('html/addfile.html') as f:
     addfile = f.read()
 with open('html/remove.html') as f:
     remove = f.read()
+print("Pages loaded, loading 3dsdb")
+titles = ET.fromstring(
+    str(urlopen('http://3dsdb.com/xml.php').read(), 'utf-8'))
+print("3DSDB loaded, optimising it...")
+tids = []
+for item in titles:
+    tids.append([item[1].text, item[8].text])
+del titles
+print("DONE!")
+print(tids[0])
+
+def getgamebytid(tid):
+    ok = False
+    for item in tids:
+        if item[1] == tid:
+            return item[0]
+            ok = True
+    if not ok:
+        return "Game TileID hasnt found in 3DSDB :("
+
 
 
 def computeMD5hash(string):
@@ -81,7 +103,7 @@ class myHandler(BaseHTTPRequestHandler):
                     message = "You havent entered path to plg file!"
                     badreq = True
                     succ = False
-                if titleid == "":
+                if titleid == "" and not 'isNotGame' in parsed:
                     message = "You havent entered game's TitleID!"
                     badreq = True
                     succ = False
@@ -89,7 +111,7 @@ class myHandler(BaseHTTPRequestHandler):
                     message = "You havent entered plugin's name!"
                     badreq = True
                     succ = False
-                elif not len(titleid) == 16:
+                elif not len(titleid) == 16 and not 'isNotGame' in parsed:
                     message = "You entered bad TitleID!"
                     badreq = True
                     succ = False
@@ -97,6 +119,7 @@ class myHandler(BaseHTTPRequestHandler):
                     message = "You entered bad URL!"
                     badreq = True
                     succ = False
+                plgp = unquote(plgp)
                 for item in plugins['ids']:
                     if not item == 0:
                         if plugins['ids'][item]['plg'] == plgp:
@@ -107,9 +130,11 @@ class myHandler(BaseHTTPRequestHandler):
                 if not badreq:
                     now = datetime.datetime.now()
                     removal_id = str(uuid4())
+                    if 'isNotGame' in parsed:
+                        titleid = 'Not game'
                     plugins['ids'][max(plugins['ids']) + 1] = {'TitleID': titleid,
                                                                'name': plugname.replace('+', ' '),
-                                                               'plg': unquote(plgp),
+                                                               'plg': plgp,
                                                                'added': now.strftime("%Y-%m-%d %H:%M"),
                                                                'timestamp': now.timestamp(),
                                                                }
@@ -157,8 +182,9 @@ class myHandler(BaseHTTPRequestHandler):
                         if plugin['TitleID'].startswith(query) or query in plugin['name']:
                             results.append(plugin)
                 for item in results:
-                    table = table + "<tr><td>%s</td><td>%s</td><td>%s</td><td><a href=\"%s\">Download</a></td></tr>" % (
+                    table = table + "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td><a href=\"%s\">Download</a></td></tr>" % (
                         item["TitleID"],
+                        getgamebytid(item["TitleID"]),
                         item["name"],
                         item["added"],
                         item['plg']
@@ -168,8 +194,9 @@ class myHandler(BaseHTTPRequestHandler):
             for item in plugins['ids']:
                 if not item == 0:
                     item = plugins['ids'][item]
-                    table = table + "<tr><td>%s</td><td>%s</td><td>%s</td><td><a href=\"%s\">Download</a></td></tr>" % (
+                    table = table + "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td><a href=\"%s\">Download</a></td></tr>" % (
                         item["TitleID"],
+                        getgamebytid(item["TitleID"]),
                         item["name"],
                         item["added"],
                         item['plg']

@@ -8,6 +8,7 @@ from json import dumps
 import hashlib
 from socketserver import ThreadingMixIn
 import threading
+from subprocess import check_output
 import xml.etree.ElementTree as ET
 from urllib.request import urlopen
 from validators import url
@@ -44,7 +45,8 @@ for item in titles:
     tids.append([item[1].text, item[8].text])
 del titles
 print("DONE!")
-print(tids[0])
+version = str(
+    check_output('git log -n 1 --pretty=format:"%h"', shell=True), 'utf-8')
 
 def getgamebytid(tid):
     ok = False
@@ -206,7 +208,7 @@ class myHandler(BaseHTTPRequestHandler):
         self.end_headers()
         # Send the html message
         if message == "":
-            page = index % (addfile, remove, search, table)
+            page = index % (version, addfile, remove, search, table)
         else:
             if succ:
                 color = 'green'

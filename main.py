@@ -50,8 +50,7 @@ for item in plugins:
     if not item == 0:
         if not 'pic' in plugins[item]:
             plugins[item]['pic'] = ""
-            plugins[item]['TitleID'] = plugins[item]['TitleID'].upper()
-            print(plugins[item]['TitleID'])
+        plugins[item]['TitleID'] = plugins[item]['TitleID'].upper()
 with open('plugins.pickle', 'wb') as f:
     pickle.dump(plugins, f)
 version = str(

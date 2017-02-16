@@ -35,7 +35,6 @@ with open('html/remove.html') as f:
     remove = f.read()
 
 
-
 def computeMD5hash(string):
     m = hashlib.md5()
     m.update(string.encode('utf-8'))
@@ -46,7 +45,7 @@ class myHandler(BaseHTTPRequestHandler):
 
     def api(self):
         self.send_response(200)
-        self.send_header('Content-type','application/json')
+        self.send_header('Content-type', 'application/json')
         self.end_headers()
         apidata = {}
         for item in plugins['ids']:
@@ -104,7 +103,7 @@ class myHandler(BaseHTTPRequestHandler):
                     now = datetime.datetime.now()
                     removal_id = str(uuid4())
                     plugins['ids'][max(plugins['ids']) + 1] = {'TitleID': titleid,
-                                                               'name': plugname,
+                                                               'name': plugname.replace('+', ' '),
                                                                'plg': unquote(plgp),
                                                                'added': now.strftime("%Y-%m-%d %H:%M"),
                                                                'timestamp': now.timestamp(),
@@ -174,7 +173,7 @@ class myHandler(BaseHTTPRequestHandler):
         self.end_headers()
         # Send the html message
         if message == "":
-            page = index %(addfile, remove, search, table)
+            page = index % (addfile, remove, search, table)
         else:
             if succ:
                 color = 'green'
@@ -192,6 +191,7 @@ class myHandler(BaseHTTPRequestHandler):
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+
     """Handle requests in a separate thread."""
 
 

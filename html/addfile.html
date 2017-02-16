@@ -1,7 +1,23 @@
 <form method="get">
-<p>Enter a URL to .plg file: <input type="text" name="plg" autocomplete="off"></p>
-<p>Check this if plugin is not for specific game: <input type="checkbox" name="isNotGame"></p>
-<p>Enter title ID of the game: <input type="text" name="titid" autocomplete="off"></p>
-<p>Enter name of the plugin: <input type="text" name="name" autocomplete="off"></p>
-<input type="submit" value="Submit NTR Plugin">
+  <div class="form-group">
+    <label for="downlink">Plugin name</label>
+    <input type="text" class="form-control" id="name" placeholder="Cool NTR plugin!">
+  </div>
+  <div class="form-group">
+    <label for="downlink">Developer name</label>
+    <input type="text" class="form-control" id="developer" placeholder="Developer">
+  </div>
+  <div class="form-group">
+    <label for="downlink">Game's TitleID(16 symbols long, optional)</label>
+    <input type="text" class="form-control" id="tid" placeholder="000400000017C300">
+  </div>
+  <div class="form-group">
+    <label for="downlink">Site of plugin(optional)</label>
+    <input type="text" class="form-control" id="plgsite" placeholder="http://example.com/">
+  </div>
+  <div class="form-group">
+    <label for="downlink">Download link</label>
+    <input type="text" class="form-control" id="plgsite" placeholder="http://example.com/example.plg">
+  </div>
+  <button type="submit" class="btn btn-default">Submit your plugin!</button>
 </form>

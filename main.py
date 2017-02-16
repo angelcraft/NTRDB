@@ -12,7 +12,6 @@ from subprocess import check_output
 import xml.etree.ElementTree as ET
 from urllib.request import urlopen
 from validators import url
-global plugins, index, messagehtml
 if exists('plugins.pickle'):
     with open('plugins.pickle', 'rb') as f:
         plugins = pickle.load(f)
@@ -28,10 +27,10 @@ else:
     raise SystemExit
 with open('html/index.html') as f:
     index = f.read()
+with open('html/base.html') as f:
+    base = f.read()
 with open('html/message.html') as f:
     messagehtml = f.read()
-with open('html/search.html') as f:
-    search = f.read()
 with open('html/addfile.html') as f:
     addfile = f.read()
 with open('html/remove.html') as f:
@@ -48,6 +47,20 @@ print("DONE!")
 version = str(
     check_output('git log -n 1 --pretty=format:"%h"', shell=True), 'utf-8')
 
+
+def parseURL(path):
+    try:
+        data = path.split("?")[1].split("&")
+    except Exception:
+        return {}
+    else:
+        parsed = {}
+        for item in data:
+            i = item.split("=")
+            parsed[i[0]] = unquote(i[1].replace('+', ' '))
+        return parsed
+
+
 def getgamebytid(tid):
     ok = False
     for item in tids:
@@ -56,7 +69,6 @@ def getgamebytid(tid):
             ok = True
     if not ok:
         return "Game TitleID hasnt found in 3DSDB :("
-
 
 
 def computeMD5hash(string):
@@ -85,95 +97,13 @@ class myHandler(BaseHTTPRequestHandler):
                     pass
         self.wfile.write(bytes(dumps(apidata), 'utf-8'))
 
-    def user(self):
+    def index(self):
         table = ""
         message = ""
         isSearch = False
         path = self.path[1:]
         if not len(path.split("?")) == 1:
-            data = path.split("?")[1].split("&")
-            parsed = {}
-            for item in data:
-                i = item.split("=")
-                parsed[i[0]] = i[1]
-            if 'plg' in parsed:
-                plgp = parsed["plg"]
-                titleid = parsed['titid']
-                plugname = parsed['name']
-                badreq = False
-                if plgp == "":
-                    message = "You havent entered path to plg file!"
-                    badreq = True
-                    succ = False
-                if titleid == "" and not 'isNotGame' in parsed:
-                    message = "You havent entered game's TitleID!"
-                    badreq = True
-                    succ = False
-                if plugname == "":
-                    message = "You havent entered plugin's name!"
-                    badreq = True
-                    succ = False
-                elif not len(titleid) == 16 and not 'isNotGame' in parsed:
-                    message = "You entered bad TitleID!"
-                    badreq = True
-                    succ = False
-                if not url(unquote(plgp)) == True:
-                    message = "You entered bad URL!"
-                    badreq = True
-                    succ = False
-                plgp = unquote(plgp)
-                for item in plugins['ids']:
-                    if not item == 0:
-                        if plugins['ids'][item]['plg'] == plgp:
-                            badreq = True
-                            succ = False
-                            message = "Plugin already exists!"
-                            break
-                if not badreq:
-                    now = datetime.datetime.now()
-                    removal_id = str(uuid4())
-                    if 'isNotGame' in parsed:
-                        titleid = 'Not game'
-                    plugins['ids'][max(plugins['ids']) + 1] = {'TitleID': titleid,
-                                                               'name': plugname.replace('+', ' '),
-                                                               'plg': plgp,
-                                                               'added': now.strftime("%Y-%m-%d %H:%M"),
-                                                               'timestamp': now.timestamp(),
-                                                               }
-                    with open('plugins.pickle', 'wb') as f:
-                        pickle.dump(plugins, f)
-                    message = "Added your plugin!".format(
-                        removal_id) + message
-                    succ = True
-            if 'gid' in parsed:
-                searchq = parsed['gid']
-                if searchq == "":
-                    message = "You havent entered game's TitleID!" + message
-                    succ = False
-            if 'plugname' in parsed:
-                searchq = parsed['plugname']
-                if searchq == "":
-                    message = "You havent entered plugin's name!" + message
-                    succ = False
-                else:
-                    isSearch = True
-            """
-            if 'rid' in parsed:
-                rid = computeMD5hash(parsed['rid'])
-                succ = False
-                for item in plugins['ids']:
-                    if not item == 0:
-                        if plugins['ids'][item]['__removal_id'] == rid:
-                            del plugins['ids'][item]
-                            message = "Your plugin has been removed..."
-                            succ = True
-                            with open('plugins.pickle', 'wb') as f:
-                                pickle.dump(plugins, f)
-                            break
-                if not succ:
-                    message = "No plugin which matches this removal ID found"
-                    succ = False
-            """
+            parsed = parseURL(self.path)
             if 'search' in parsed:
                 query = parsed['search']
                 isSearch = True
@@ -214,23 +144,77 @@ class myHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
         self.end_headers()
-        # Send the html message
-        if message == "":
-            page = index % (version, addfile, remove, search, table)
-        else:
-            if succ:
-                color = 'green'
-            else:
-                color = 'red'
-            page = messagehtml % (color, message)
+        page = base % (version, index % (table))
         self.wfile.write(bytes(page, 'utf-8'))
 
+    def additem(self):
+        parsed = parseURL(self.path)
+        print(parsed)
+        if 'plg' in parsed:
+                plgp = parsed["plg"]
+                titleid = parsed['titid']
+                plugname = parsed['name']
+                badreq = False
+                if plgp == "":
+                    message = "You havent entered path to plg file!"
+                    badreq = True
+                    succ = False
+                if titleid == "" and not 'isNotGame' in parsed:
+                    message = "You havent entered game's TitleID!"
+                    badreq = True
+                    succ = False
+                if plugname == "":
+                    message = "You havent entered plugin's name!"
+                    badreq = True
+                    succ = False
+                elif not len(titleid) == 16 and not 'isNotGame' in parsed:
+                    message = "You entered bad TitleID!"
+                    badreq = True
+                    succ = False
+                if not url(unquote(plgp)) == True:
+                    message = "You entered bad plugin download URL!"
+                    badreq = True
+                    succ = False
+                plgp = unquote(plgp)
+                for item in plugins['ids']:
+                    if not item == 0:
+                        if plugins['ids'][item]['plg'] == plgp:
+                            badreq = True
+                            succ = False
+                            message = "Plugin already exists!"
+                            break
+                if not badreq:
+                    now = datetime.datetime.now()
+                    removal_id = str(uuid4())
+                    if 'isNotGame' in parsed:
+                        titleid = 'Not game'
+                    plugins['ids'][max(plugins['ids']) + 1] = {'TitleID': titleid,
+                                                               'name': plugname.replace('+', ' '),
+                                                               'plg': plgp,
+                                                               'added': now.strftime("%Y-%m-%d %H:%M"),
+                                                               'timestamp': now.timestamp(),
+                                                               'version': ver,
+                                                               'site': site
+                                                               }
+                    with open('plugins.pickle', 'wb') as f:
+                        pickle.dump(plugins, f)
+                    message = "Added your plugin!".format(
+                        removal_id)
+                    succ = True
+        else:
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            page = base % (version, addfile)
+            self.wfile.write(bytes(page, 'utf-8'))
     # Handler for the GET requests
     def do_GET(self):
-        if not self.path.startswith('/api'):
-            self.user()
-        else:
+        if self.path.startswith('/api'):
             self.api()
+        elif self.path.startswith('/additem'):
+            self.additem()
+        else:
+            self.index()
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):

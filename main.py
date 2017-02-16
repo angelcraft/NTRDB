@@ -184,9 +184,13 @@ class myHandler(BaseHTTPRequestHandler):
                         if plugin['TitleID'].startswith(query) or query in plugin['name']:
                             results.append(plugin)
                 for item in results:
+                    if not item["TitleID"] == "Not game":
+                        name = getgamebytid(item["TitleID"])
+                    else:
+                        name = ""
                     table = table + "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td><a href=\"%s\">Download</a></td></tr>" % (
                         item["TitleID"],
-                        getgamebytid(item["TitleID"]),
+                        name,
                         item["name"],
                         item["added"],
                         item['plg']

@@ -55,7 +55,7 @@ def getgamebytid(tid):
             return item[0]
             ok = True
     if not ok:
-        return "Game TileID hasnt found in 3DSDB :("
+        return "Game TitleID hasnt found in 3DSDB :("
 
 
 

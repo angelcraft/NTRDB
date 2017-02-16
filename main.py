@@ -103,7 +103,8 @@ class myHandler(BaseHTTPRequestHandler):
                 descr = str(item['desc'])
                 cpb = str(item['compatible'])
                 if not str(item['pic']) == "":
-                    pic = "<p>Screenshot:</p><img src=\"%s\">" % (str(item['pic']))
+                    pic = "<p>Screenshot:</p><img src=\"%s\">" % (
+                        str(item['pic']))
                 else:
                     pic = ""
                 succ = True
@@ -151,7 +152,7 @@ class myHandler(BaseHTTPRequestHandler):
         if not len(path.split("?")) == 1:
             parsed = parseURL(self.path)
             if 'search' in parsed:
-                query = parsed['search']
+                query = str(parsed['search'])
                 isSearch = True
                 results = []
                 for item in plugins:
@@ -159,7 +160,7 @@ class myHandler(BaseHTTPRequestHandler):
                         num = item
                         plugin = plugins[item]
                         plugin['id'] = num
-                        if plugin['TitleID'].startswith(query) or query in plugin['name'] or query in getgamebytid(item["TitleID"]):
+                        if str(plugin['TitleID']).startswith(query) or query in str(plugin['name']) or query in str(getgamebytid(plugin["TitleID"])):
                             results.append(plugin)
                 for item in results:
                     if not item["TitleID"] == "Not game":
@@ -253,7 +254,7 @@ class myHandler(BaseHTTPRequestHandler):
                                              'timestamp': now.timestamp(),
                                              'version': ver,
                                              'compatible': cpb,
-                                             'pic':pic
+                                             'pic': pic
                                              }
                 with open('plugins.pickle', 'wb') as f:
                     pickle.dump(plugins, f)

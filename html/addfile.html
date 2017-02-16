@@ -27,6 +27,25 @@
     <label for="link">Download link</label>
     <input type="text" class="form-control" id="link" name="link" placeholder="http://example.com/example.plg" required>
   </div>
+  Select an compatible 3DS version for that plugin:
+  <div class="form-check">
+  <label class="form-check-label">
+    <input class="form-check-input" type="radio" name="ctype" id="universal" value="universal" checked>
+    Universal
+  </label>
+  </div>
+  <div class="form-check">
+    <label class="form-check-label">
+      <input class="form-check-input" type="radio" name="ctype" id="Old 3DS" value="o3ds">
+      Old3DS Only
+    </label>
+  </div>
+  <div class="form-check ">
+    <label class="form-check-label">
+      <input class="form-check-input" type="radio" name="ctype" id="New 3DS" value="o3ds">
+      New3DS Only
+    </label>
+</div>
   <input type="hidden" name='add' value="1">
   <button type="submit" class="btn btn-primary">Submit your plugin!</button>
 </form>

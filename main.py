@@ -94,6 +94,7 @@ class myHandler(BaseHTTPRequestHandler):
                 devsite = str(item['devsite'])
                 dlink = str(item['plg'])
                 descr = str(item['desc'])
+                cpb = str(item['compatible'])
                 succ = True
         else:
             succ = False
@@ -103,7 +104,7 @@ class myHandler(BaseHTTPRequestHandler):
             self.end_headers()
             page = base % (version,
                            desc % (
-                               name, ver, dev, gamename, tid, devsite, dlink, descr)
+                               name, cpb, ver, dev, gamename, tid, devsite, dlink, descr)
                            )
         else:
             self.send_response(400)
@@ -157,6 +158,7 @@ class myHandler(BaseHTTPRequestHandler):
                     table = table + links % (
                         name,
                         item["name"],
+                        item["compatible"],
                         item["added"],
                         item['plg'],
                         item['devsite'],
@@ -175,6 +177,7 @@ class myHandler(BaseHTTPRequestHandler):
                     table = table + links % (
                         name,
                         item["name"],
+                        item["compatible"],
                         item["added"],
                         item['plg'],
                         item['devsite'],
@@ -197,6 +200,7 @@ class myHandler(BaseHTTPRequestHandler):
             devsite = parsed['devsite']
             desc = parsed['desc']
             ver = parsed['ver']
+            cpb = parsed['ctype']
             badreq = False
             if plgp == "":
                 message = "You havent entered path to plg file!"
@@ -219,7 +223,8 @@ class myHandler(BaseHTTPRequestHandler):
             plgp = plgp
             for item in plugins:
                 if not item == 0:
-                    if plugins[item]['plg'] == plgp:
+                    plugin = plugins[item]
+                    if plugin['plg'] == plgp and plugin['TitleID'] == titleid and plugin['Compatible'] == cpb and plugin['verion'] == ver:
                         badreq = True
                         succ = False
                         message = "Plugin already exists!"
@@ -235,6 +240,7 @@ class myHandler(BaseHTTPRequestHandler):
                                              'added': now.strftime("%Y-%m-%d %H:%M"),
                                              'timestamp': now.timestamp(),
                                              'version': ver,
+                                             'compatible': cpb
                                              }
                 with open('plugins.pickle', 'wb') as f:
                     pickle.dump(plugins, f)

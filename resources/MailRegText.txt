@@ -1,0 +1,7 @@
+Hello someone with e-mail %s!
+
+Looks like you tried to register on NTRDB(if you dont, ignore this message)
+
+Here is your activation link:
+
+octonezd.pw/activate?id=%s

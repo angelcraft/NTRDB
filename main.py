@@ -1,4 +1,8 @@
+import smtplib
+from email.mime.text import MIMEText
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from pprint import pprint
+from http.cookies import BaseCookie
 import pickle
 from os.path import exists
 import datetime
@@ -10,8 +14,17 @@ import threading
 from subprocess import check_output
 import xml.etree.ElementTree as ET
 from html import escape
+from uuid import uuid4
 from urllib.request import urlopen
-from validators import url
+from validators import url, email
+import mailsettings
+
+
+def computeMD5hash(string):
+    m = hashlib.md5()
+    m.update(string.encode('utf-8'))
+    return m.hexdigest()
+
 if exists('plugins.pickle'):
     with open('plugins.pickle', 'rb') as f:
         plugins = pickle.load(f)
@@ -24,6 +37,23 @@ else:
             f)
     print(
         "Plugin database wasnt found. The one were created, to apply it please restart NTRDB")
+    raise SystemExit
+if exists('users.pickle'):
+    with open('users.pickle', 'rb') as f:
+        users = pickle.load(f)
+else:
+    print(
+        'Looks like you are running NTRDB first time or you removed users.pickle file.')
+    print('Please set admin password.')
+    pword = computeMD5hash(input())
+    with open('users.pickle', 'wb') as f:
+        pickle.dump(
+            {
+                'Admin': [pword, True],
+            },
+            f)
+    print(
+        "Please restart NTRDB to apply changes")
     raise SystemExit
 with open('resources/favicon.png', 'rb') as f:
     icon = f.read()
@@ -39,6 +69,16 @@ with open('html/addfile.html') as f:
     addfile = f.read()
 with open('html/links.html') as f:
     links = f.read()
+with open('html/nbar_loggedin.html') as f:
+    nbar_loggedin = f.read()
+with open('html/nbar_login.html') as f:
+    nbar_login = f.read()
+with open('html/register.html') as f:
+    reg_page = f.read()
+with open('html/login.html') as f:
+    login_page = f.read()
+with open('resources/MailRegText.txt') as f:
+    actmsg = f.read()
 print("Pages loaded, loading 3dsdb")
 titles = ET.fromstring(
     str(urlopen('http://3dsdb.com/xml.php').read(), 'utf-8'))
@@ -58,6 +98,12 @@ with open('plugins.pickle', 'wb') as f:
     pickle.dump(plugins, f)
 version = str(
     check_output('git log -n 1 --pretty=format:"%h"', shell=True), 'utf-8')
+print("Connecting to mail server...")
+mailsrv = smtplib.SMTP_SSL(
+    host=mailsettings.smtpserver, port=mailsettings.smtpport)
+print("Logging in...")
+mailsrv.login(mailsettings.user, mailsettings.password)
+print("Logged in!")
 
 
 def parseURL(path):
@@ -73,6 +119,18 @@ def parseURL(path):
         return parsed
 
 
+def parseCookie(header):
+    if 'Cookie' in header:
+        cookies_raw = header["Cookie"].split('; ')
+        cookies = {}
+        for item in cookies_raw:
+            cookie = item.split('=')
+            cookies[cookie[0]] = cookie[1].replace('"', '')
+        return cookies
+    else:
+        return {}
+
+
 def getgamebytid(tid):
     ok = False
     for item in tids:
@@ -81,12 +139,6 @@ def getgamebytid(tid):
             ok = True
     if not ok:
         return "Game TitleID hasnt found in 3DSDB :("
-
-
-def computeMD5hash(string):
-    m = hashlib.md5()
-    m.update(string.encode('utf-8'))
-    return m.hexdigest()
 
 
 class myHandler(BaseHTTPRequestHandler):
@@ -199,10 +251,15 @@ class myHandler(BaseHTTPRequestHandler):
                         item['devsite'],
                         idnum
                     )
+        if 'Auth' in self.cookies:
+            nbar = nbar_loggedin
+        else:
+            nbar = nbar_login
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
+        self.send_header('Set-Cookie')
         self.end_headers()
-        page = base % (version, index % (table))
+        page = base % (version, nbar, index % (table))
         self.wfile.write(bytes(page, 'utf-8'))
 
     def additem(self):
@@ -276,7 +333,44 @@ class myHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(bytes(page, 'utf-8'))
 
+    def register(self):
+        if 'AToken' in self.cookies:
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            page = base % (
+                version, "", "<META HTTP-EQUIV=\"refresh\" CONTENT=\"1; URL=index\">")
+            self.wfile.write(bytes(page, 'utf-8'))
+        else:
+            parsed = parseURL(self.path)
+            if parsed == {}:
+                page = base % (version, "", reg_page)
+            else:
+                pwordh = computeMD5hash(parsed['pword'])
+                mail = parsed['email']
+                del parsed  # FORGET PASSWORD
+                # Btw, it useless, because we cant remove self.path(I think)
+                # But it frees some memory so it is good!
+                if mail in users:
+                    page = base % (
+                        version, "", messagehtml % ('danger', "This email is already registered"))
+                else:
+                    users[mail] = [pwordh, str(uuid4())]
+                    msg = MIMEText(actmsg % (mail, users[mail][1]))
+                    msg['Subject'] = 'Confirm activation on NTRDB'
+                    msg['From'] = mailsettings.user
+                    msg['To'] = mail
+                    mailsrv.send_message(msg)
+                    page = base % (version, "", messagehtml % (
+                        'info', "You almost registered! Now please check your email for activation message from ntrdb@octonezd.pw!"))
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(bytes(page, 'utf-8'))
+
     def do_GET(self):
+        self.cookies = parseCookie(dict(self.headers))
+        pprint(self.cookies)
         try:
             if self.path.startswith('/api'):
                 self.api()
@@ -284,11 +378,15 @@ class myHandler(BaseHTTPRequestHandler):
                 self.additem()
             elif self.path.startswith('/description'):
                 self.description()
+            elif self.path.startswith('/reg'):
+                self.register()
             elif self.path.startswith('/favicon'):
                 self.send_response(200)
                 self.send_header('Content-type', 'image/png')
                 self.end_headers()
                 self.wfile.write(icon)
+            elif self.path.startswith('/error'):
+                1 / 0
             else:
                 self.index()
         except Exception as e:
@@ -296,7 +394,7 @@ class myHandler(BaseHTTPRequestHandler):
             self.send_response(500)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
-            page = base % (version, messagehtml %
+            page = base % (version, "", messagehtml %
                            ('danger', 'Oops! An error occured when processing your request!'))
             self.wfile.write(bytes(page, 'utf-8'))
 

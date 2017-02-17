@@ -9,6 +9,7 @@ from socketserver import ThreadingMixIn
 import threading
 from subprocess import check_output
 import xml.etree.ElementTree as ET
+from html import escape
 from urllib.request import urlopen
 from validators import url
 if exists('plugins.pickle'):
@@ -63,7 +64,7 @@ def parseURL(path):
         parsed = {}
         for item in data:
             i = item.split("=")
-            parsed[i[0]] = unquote(i[1].replace('+', ' '))
+            parsed[i[0]] = escape(unquote(i[1].replace('+', ' ')))
     except Exception:
         parsed = {}
     finally:

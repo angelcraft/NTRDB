@@ -25,6 +25,7 @@ def computeMD5hash(string):
     m.update(string.encode('utf-8'))
     return m.hexdigest()
 
+
 if exists('plugins.pickle'):
     with open('plugins.pickle', 'rb') as f:
         plugins = pickle.load(f)
@@ -109,6 +110,8 @@ except smtplib.SMTPException as e:
     print("There was an error connecting to mail server!")
     raise e
     raise SystemExit
+sessions = {}
+
 
 def parseURL(path):
     try:
@@ -146,6 +149,39 @@ def getgamebytid(tid):
 
 
 class myHandler(BaseHTTPRequestHandler):
+
+    def ulogpage(self):
+        if 'AToken' in self.cookies:
+            page = "<META HTTP-EQUIV=\"refresh\" CONTENT=\"1; URL=index\">"
+        else:
+            args = parseURL(self.path)
+            if 'email' in args:
+                if args['email'] in users:
+                    user = users[args['email']]
+                    phash = computeMD5hash(args['pword'])
+                    print(user)
+                    print(phash)
+                    if user[1] is True:
+                        if user[0] == phash:
+                            page = messagehtml % (
+                                'success', "You succesfully logged in, you will redirect to main page in 5 seconds, or you can click Return To Index<META HTTP-EQUIV=\"refresh\" CONTENT=\"5; URL=index\">")
+                            cookie = uuid4()
+                            print(cookie)
+                            session[computeMD5hash(cookie)] = args['email']
+                        else:
+                            page = messagehtml % (
+                                'danger', 'You entered wrong password or email')
+                    else:
+                        page = messagehtml % (
+                            'danger', 'This account hasnt activated yet.')
+                        print(page)
+                else:
+                    page = messagehtml % (
+                        'danger', 'You entered wrong password or email')
+            else:
+                page = login_page
+        return page
+
     def activate(self):
         args = parseURL(self.path)
         if 'id' in args:
@@ -153,8 +189,8 @@ class myHandler(BaseHTTPRequestHandler):
             for user in users:
                 user = users[user]
                 if user[1] == uid:
-                    page = base % (version, "", messagehtml %
-                           ('success', 'You successfully activated account!'))
+                    page = messagehtml % (
+                        'success', 'You successfully activated account!')
                     user[1] = True
                     succ = True
                     with open('users.pickle', 'wb') as f:
@@ -163,15 +199,11 @@ class myHandler(BaseHTTPRequestHandler):
         else:
             succ = False
         if succ:
-            page = base % (version, "", messagehtml %
-                           ('success', 'You successfully activated account!'))
+            page = messagehtml % (
+                'success', 'You successfully activated account!')
         else:
-            page = base % (version, "", messagehtml %
-                               ('danger', 'Looks like you got bad link :('))
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html')
-        self.end_headers()
-        self.wfile.write(bytes(page, 'utf-8'))
+            page = messagehtml % ('danger', 'Looks like you got bad link :(')
+        return page
 
     def description(self):
         parsed = parseURL(self.path)
@@ -197,20 +229,12 @@ class myHandler(BaseHTTPRequestHandler):
         else:
             succ = False
         if succ:
-            self.send_response(200)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            page = base % (version,
-                           desc % (
-                               name, cpb, ver, dev, gamename, tid, devsite, dlink, descr, pic)
-                           )
+            page = desc % (
+                name, cpb, ver, dev, gamename, tid, devsite, dlink, descr, pic)
         else:
-            self.send_response(400)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            page = base % (version, messagehtml %
-                           ('danger', 'Oops! Looks like you got bad link'))
-        self.wfile.write(bytes(page, 'utf-8'))
+            page = messagehtml % (
+                'danger', 'Oops! Looks like you got bad link')
+        return page
 
     def api(self):
         self.send_response(200)
@@ -232,7 +256,6 @@ class myHandler(BaseHTTPRequestHandler):
 
     def index(self):
         table = ""
-        message = ""
         isSearch = False
         path = self.path[1:]
         if not len(path.split("?")) == 1:
@@ -281,15 +304,8 @@ class myHandler(BaseHTTPRequestHandler):
                         item['devsite'],
                         idnum
                     )
-        if 'Auth' in self.cookies:
-            nbar = nbar_loggedin
-        else:
-            nbar = nbar_login
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html')
-        self.end_headers()
-        page = base % (version, nbar, index % (table))
-        self.wfile.write(bytes(page, 'utf-8'))
+        page = index % (table)
+        return page
 
     def additem(self):
         message = ""
@@ -354,44 +370,43 @@ class myHandler(BaseHTTPRequestHandler):
                 message = messagehtml % ('success', message)
             else:
                 message = messagehtml % ('danger', message)
-            page = base % (version, message)
+            page = message
         else:
-            page = base % (version, addfile)
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html')
-        self.end_headers()
-        self.wfile.write(bytes(page, 'utf-8'))
+            page = addfile
+        return page
 
     def register(self):
         if 'AToken' in self.cookies:
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
-            page = base % (
-                version, "", "<META HTTP-EQUIV=\"refresh\" CONTENT=\"1; URL=index\">")
+            page = "<META HTTP-EQUIV=\"refresh\" CONTENT=\"1; URL=index\">"
             self.wfile.write(bytes(page, 'utf-8'))
         else:
             parsed = parseURL(self.path)
             if parsed == {}:
-                page = base % (version, "", reg_page)
+                page = reg_page
             else:
                 pwordh = computeMD5hash(parsed['pword'])
                 mail = parsed['email']
                 del parsed  # FORGET PASSWORD
                 # Btw, it useless, because we cant remove self.path(I think)
                 # But it frees some memory so it is good!
-                if mail in users:
-                    page = base % (
-                        version, "", messagehtml % ('danger', "This email is already registered"))
+                if email(mail):
+                    if mail in users:
+                        page = messagehtml % (
+                            'danger', "This email is already registered")
+                    else:
+                        users[mail] = [pwordh, str(uuid4())]
+                        msg = MIMEText(actmsg % (mail, users[mail][1]))
+                        msg['Subject'] = 'Confirm activation on NTRDB'
+                        msg['From'] = mailsettings.user
+                        msg['To'] = mail
+                        mailsrv.send_message(msg)
+                        page = messagehtml % (
+                            'info', "You almost registered! Now please check your email for activation message from ntrdb@octonezd.pw!")
                 else:
-                    users[mail] = [pwordh, str(uuid4())]
-                    msg = MIMEText(actmsg % (mail, users[mail][1]))
-                    msg['Subject'] = 'Confirm activation on NTRDB'
-                    msg['From'] = mailsettings.user
-                    msg['To'] = mail
-                    mailsrv.send_message(msg)
-                    page = base % (version, "", messagehtml % (
-                        'info', "You almost registered! Now please check your email for activation message from ntrdb@octonezd.pw!"))
+                    page = messagehtml % ('danger', "You entered bad email.")
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
@@ -399,19 +414,28 @@ class myHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         self.cookies = parseCookie(dict(self.headers))
-        pprint(self.cookies)
+        speccall = False
+        if 'AToken' in self.cookies:
+            uname = sessions[self.cookies['AToken']]
+            nbar = nbar_loggedin % (uname)
+        else:
+            nbar = nbar_login
         try:
             if self.path.startswith('/api'):
+                speccall = True
                 self.api()
             elif self.path.startswith('/additem'):
-                self.additem()
+                page = self.additem()
             elif self.path.startswith('/description'):
-                self.description()
+                page = self.description()
             elif self.path.startswith('/reg'):
-                self.register()
+                page = self.register()
             elif self.path.startswith('/activate'):
-                self.activate()
+                page = self.activate()
+            elif self.path.startswith('/login'):
+                page = self.ulogpage()
             elif self.path.startswith('/favicon'):
+                speccall = True
                 self.send_response(200)
                 self.send_header('Content-type', 'image/png')
                 self.end_headers()
@@ -419,15 +443,21 @@ class myHandler(BaseHTTPRequestHandler):
             elif self.path.startswith('/error'):
                 1 / 0
             else:
-                self.index()
+                page = self.index()
+            if not speccall:
+                self.send_response(200)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                page = base % (version, nbar, page)
+                self.wfile.write(bytes(page, 'utf-8'))
         except Exception as e:
-            print(e)
             self.send_response(500)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
-            page = base % (version, "", messagehtml %
+            page = base % (version, nbar, messagehtml %
                            ('danger', 'Oops! An error occured when processing your request!'))
             self.wfile.write(bytes(page, 'utf-8'))
+            raise e
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):

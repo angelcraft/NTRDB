@@ -231,8 +231,8 @@ class myHandler(BaseHTTPRequestHandler):
                 message = "You havent entered plugin's name!"
                 badreq = True
                 succ = False
-            if not url(plgp) is True:
-                message = "You entered bad plugin download URL!"
+            if not url(plgp) is True or not url(pic) is True or url(devsite):
+                message = "You entered bad URL!"
                 badreq = True
                 succ = False
             plgp = plgp

@@ -25,6 +25,8 @@ else:
     print(
         "Plugin database wasnt found. The one were created, to apply it please restart NTRDB")
     raise SystemExit
+with open('resources/favicon.png', 'rb') as f:
+    icon = f.read()
 with open('html/index.html') as f:
     index = f.read()
 with open('html/desc.html') as f:
@@ -282,6 +284,11 @@ class myHandler(BaseHTTPRequestHandler):
                 self.additem()
             elif self.path.startswith('/description'):
                 self.description()
+            elif self.path.startswith('/favicon'):
+                self.send_response(200)
+                self.send_header('Content-type', 'image/png')
+                self.end_headers()
+                self.wfile.write(icon)
             else:
                 self.index()
         except Exception as e:

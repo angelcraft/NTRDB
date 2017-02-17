@@ -18,6 +18,12 @@ from uuid import uuid4
 from urllib.request import urlopen
 from validators import url, email
 import mailsettings
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('-p', '--port', type=int,
+                    help='Port for receiving requests', required=False)
+args = parser.parse_args()
+port = args.port
 
 
 def computeMD5hash(string):
@@ -167,7 +173,7 @@ class myHandler(BaseHTTPRequestHandler):
                                 'success', "You succesfully logged in, you will redirect to main page in 5 seconds, or you can click Return To Index<META HTTP-EQUIV=\"refresh\" CONTENT=\"5; URL=index\">")
                             cookie = uuid4()
                             print(cookie)
-                            session[computeMD5hash(cookie)] = args['email']
+                            sessions[computeMD5hash(cookie)] = args['email']
                         else:
                             page = messagehtml % (
                                 'danger', 'You entered wrong password or email')
@@ -402,15 +408,18 @@ class myHandler(BaseHTTPRequestHandler):
                         msg['Subject'] = 'Confirm activation on NTRDB'
                         msg['From'] = mailsettings.user
                         msg['To'] = mail
-                        mailsrv.send_message(msg)
+                        while 1:
+                            try:
+                                mailsrv.send_message(msg)
+                            except smtplib.SMTPException:
+                                pass
+                            else:
+                                break
                         page = messagehtml % (
                             'info', "You almost registered! Now please check your email for activation message from ntrdb@octonezd.pw!")
                 else:
                     page = messagehtml % ('danger', "You entered bad email.")
-            self.send_response(200)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            self.wfile.write(bytes(page, 'utf-8'))
+            return page
 
     def do_GET(self):
         self.cookies = parseCookie(dict(self.headers))
@@ -466,12 +475,13 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 
 
 try:
-    # Create a web server and define the handler to manage the
-    # incoming request
-    server = ThreadedHTTPServer(('', 8080), myHandler)
+    if port:
+        server = ThreadedHTTPServer(('', port), myHandler)
+    else:
+        server = ThreadedHTTPServer(('', 8080), myHandler)
     print('Started httpserver')
 
-    # Wait forever for incoming htto requests
+    # Wait forever for incoming http requests
     server.serve_forever()
 except KeyboardInterrupt:
     pass

@@ -140,3 +140,6 @@ $RECYCLE.BIN/
 plugins.pickle
 read.py
 3dsreleases.xml
+
+mailsettings.py
+users.pickle

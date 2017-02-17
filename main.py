@@ -99,12 +99,16 @@ with open('plugins.pickle', 'wb') as f:
 version = str(
     check_output('git log -n 1 --pretty=format:"%h"', shell=True), 'utf-8')
 print("Connecting to mail server...")
-mailsrv = smtplib.SMTP_SSL(
-    host=mailsettings.smtpserver, port=mailsettings.smtpport)
-print("Logging in...")
-mailsrv.login(mailsettings.user, mailsettings.password)
-print("Logged in!")
-
+try:
+    mailsrv = smtplib.SMTP_SSL(
+        host=mailsettings.smtpserver, port=mailsettings.smtpport)
+    print("Logging in...")
+    mailsrv.login(mailsettings.user, mailsettings.password)
+    print("Logged in!")
+except smtplib.SMTPException as e:
+    print("There was an error connecting to mail server!")
+    raise e
+    raise SystemExit
 
 def parseURL(path):
     try:
@@ -142,6 +146,32 @@ def getgamebytid(tid):
 
 
 class myHandler(BaseHTTPRequestHandler):
+    def activate(self):
+        args = parseURL(self.path)
+        if 'id' in args:
+            uid = args['id']
+            for user in users:
+                user = users[user]
+                if user[1] == uid:
+                    page = base % (version, "", messagehtml %
+                           ('success', 'You successfully activated account!'))
+                    user[1] = True
+                    succ = True
+                    with open('users.pickle', 'wb') as f:
+                        pickle.dump(users, f)
+                    break
+        else:
+            succ = False
+        if succ:
+            page = base % (version, "", messagehtml %
+                           ('success', 'You successfully activated account!'))
+        else:
+            page = base % (version, "", messagehtml %
+                               ('danger', 'Looks like you got bad link :('))
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        self.wfile.write(bytes(page, 'utf-8'))
 
     def description(self):
         parsed = parseURL(self.path)
@@ -257,7 +287,6 @@ class myHandler(BaseHTTPRequestHandler):
             nbar = nbar_login
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
-        self.send_header('Set-Cookie')
         self.end_headers()
         page = base % (version, nbar, index % (table))
         self.wfile.write(bytes(page, 'utf-8'))
@@ -380,6 +409,8 @@ class myHandler(BaseHTTPRequestHandler):
                 self.description()
             elif self.path.startswith('/reg'):
                 self.register()
+            elif self.path.startswith('/activate'):
+                self.activate()
             elif self.path.startswith('/favicon'):
                 self.send_response(200)
                 self.send_header('Content-type', 'image/png')

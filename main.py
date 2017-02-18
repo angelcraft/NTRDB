@@ -226,11 +226,14 @@ class myHandler(BaseHTTPRequestHandler):
         if "id" in parsed:
             gid = int(parsed["id"])
             cuser, _ = self.checkAuth()
-            if cuser == 'admin@ntrdb' or gid in users[cuser][2]:
-                options = 'Options:<a href="edit?plugid=%s" class="btn btn-secondary btn-sm">Edit</a><a href="rm?plugid=%s" class="btn btn-danger btn-sm">Remove</a>' % (
-                        parsed['id'], parsed['id'])
-            else:
-                admintools = ''
+            try:
+                if cuser == 'admin@ntrdb' or gid in users[cuser][2]:
+                    options = 'Options:<a href="edit?plugid=%s" class="btn btn-secondary btn-sm">Edit</a><a href="rm?plugid=%s" class="btn btn-danger btn-sm">Remove</a>' % (
+                            parsed['id'], parsed['id'])
+                else:
+                    options = ''
+            except KeyError:
+                options = ''
             if gid in plugins and not gid == 0:
                 item = plugins[gid]
                 name = str(item['name'])
@@ -252,7 +255,7 @@ class myHandler(BaseHTTPRequestHandler):
             succ = False
         if succ:
             page = desc % (
-                name, cpb, ver, dev, gamename, tid, devsite, dlink, descr, pic, admintools)
+                name, cpb, ver, dev, gamename, tid, devsite, dlink, descr, pic, options)
         else:
             page = messagehtml % (
                 'danger', 'Oops! Looks like you got bad link')

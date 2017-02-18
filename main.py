@@ -154,7 +154,7 @@ class myHandler(BaseHTTPRequestHandler):
                     # If user have bad cookie
                     self.send_response(200)
                     self.send_header('Set-Cookie', 'AToken=%s;HttpOnly;%s' %
-                                     (self.cookie['AToken'], 'Expires=Wed, 21 Oct 2007 07:28:00 GMT'))
+                                      (self.cookie['AToken'], 'Expires=Wed, 21 Oct 2007 07:28:00 GMT'))
                     self.send_header('Content-type', 'text/html')
                     self.end_headers()
                     self.wfile.write(
@@ -227,7 +227,8 @@ class myHandler(BaseHTTPRequestHandler):
         parsed = parseURL(self.path)
         if "id" in parsed:
             if self.checkAuth()[0] == 'admin@ntrdb':
-                admintools = 'Admin tools:<a href="rm?plugid=%s" class="btn btn-danger btn-sm">Remove</a>' % (parsed['id'])
+                admintools = 'Admin tools:<a href="rm?plugid=%s" class="btn btn-danger btn-sm">Remove</a>' % (parsed[
+                                                                                                              'id'])
             else:
                 admintools = ''
             gid = int(parsed["id"])
@@ -366,7 +367,7 @@ class myHandler(BaseHTTPRequestHandler):
                 for item in plugins:
                     if not item == 0:
                         plugin = plugins[item]
-                        if plugin['plg'] == plgp and plugin['TitleID'] == titleid and plugin['Compatible'] == cpb and plugin['verion'] == ver:
+                        if plugin['plg'] == plgp and plugin['TitleID'] == titleid and plugin['compatible'] == cpb and plugin['verion'] == ver:
                             badreq = True
                             succ = False
                             message = "Plugin already exists!"
@@ -403,6 +404,91 @@ class myHandler(BaseHTTPRequestHandler):
         else:
             page = messagehtml % (
                 'danger', 'You cant add items because you are not logged in.')
+        return page
+
+    def edit(self):
+        args = parseURL(self.path)
+        plid = int(args['plugid'])
+        cuser = self.checkAuth()[0]
+        if cuser:
+            if plid in users[cuser][2] or cuser == 'admin@ntrdb':
+                message = ""
+                if 'edit' in args:
+                    plgp = args["link"]
+                    titleid = args['tid'].upper()
+                    plugname = args['name']
+                    developer = args['developer']
+                    devsite = args['devsite']
+                    desc = args['desc']
+                    ver = args['ver']
+                    cpb = args['ctype']
+                    pic = args['pic']
+                    badreq = False
+                    if plgp == "":
+                        message = "You havent entered path to plg file!"
+                        badreq = True
+                        succ = False
+                    if titleid == "":
+                        titleid = "Not game"
+                    elif not len(titleid) == 16:
+                        message = "You entered bad TitleID!"
+                        badreq = True
+                        succ = False
+                    if plugname == "":
+                        message = "You havent entered plugin's name!"
+                        badreq = True
+                        succ = False
+                    if not url(plgp) or not url(pic) or not url(devsite):
+                        message = "You entered bad URL!"
+                        badreq = True
+                        succ = False
+                    for item in plugins:
+                        if not item == 0:
+                            plugin = plugins[item]
+                            if plugin['plg'] == plgp and plugin['TitleID'] == titleid and plugin['compatible'] == cpb and plugin['verion'] == ver:
+                                badreq = True
+                                succ = False
+                                message = "Plugin already exists!"
+                                break
+                    if not badreq:
+                        now = datetime.datetime.now()
+                        plugins[plid] = {'TitleID': titleid,
+                                         'name': plugname,
+                                         'developer': developer,
+                                         'devsite': devsite,
+                                         'desc': desc,
+                                         'plg': plgp,
+                                         'added': now.strftime("%Y-%m-%d %H:%M"),
+                                         'timestamp': now.timestamp(),
+                                         'version': ver,
+                                         'compatible': cpb,
+                                         'pic': pic
+                                         }
+                        with open('plugins.pickle', 'wb') as f:
+                            pickle.dump(plugins, f)
+                        message = "Your plugin was edited successfully"
+                        succ = True
+                    if succ:
+                        message = messagehtml % ('success', message)
+                    else:
+                        message = messagehtml % ('danger', message)
+                    page = message
+                else:
+                    pl = plugins[plid]
+                    page = editpage % (
+                        plid,
+                        pl['name'],
+                        pl['desc'],
+                        pl['version'],
+                        pl['developer'],
+                        pl['TitleID'],
+                        pl['devsite'],
+                        pl['plg'],
+                        pl['pic']
+                    )
+            else:
+                page = messagehtml % (
+                    'danger', 'You cant add items because you are not logged in.')
         return page
 
     def register(self, parsed):
@@ -510,57 +596,60 @@ class myHandler(BaseHTTPRequestHandler):
         self.cookie = parseCookie(dict(self.headers))
         # print(sessions)
         # print(self.cookie)
-        cuser, speccall = self.checkAuth()
+        cuser, rcookies = self.checkAuth()
         if cuser:
             nbar = nbar_loggedin % cuser
         else:
             nbar = nbar_login
-        try:
-            if self.path.startswith('/api'):
-                speccall = True
-                self.api()
-            elif self.path.startswith('/additem'):
-                page = self.additem()
-            elif self.path.startswith('/description'):
-                page = self.description()
-            elif self.path.startswith('/reg'):
-                page = self.register(False)
-            elif self.path.startswith('/activate'):
-                page = self.activate()
-            elif self.path.startswith('/login'):
-                lpage = self.ulogpage(False)
-                page = lpage[0]
-            elif self.path.startswith('/manage'):
-                page = self.manage()
-            elif self.path.startswith('/logout'):
-                page = self.logout()
-                speccall = True
-            elif self.path.startswith('/favicon'):
-                speccall = True
-                self.send_response(200)
-                self.send_header('Content-type', 'image/png')
-                self.end_headers()
-                self.wfile.write(icon)
-            elif self.path.startswith('/error'):
-                1 / 0
-            elif self.path.startswith('/rm'):
-                page = self.rm()
-            else:
-                page = self.index()
-            if not speccall:
-                self.send_response(200)
+        if not rcookies:
+            try:
+                if self.path.startswith('/api'):
+                    speccall = True
+                    self.api()
+                elif self.path.startswith('/additem'):
+                    page = self.additem()
+                elif self.path.startswith('/description'):
+                    page = self.description()
+                elif self.path.startswith('/reg'):
+                    page = self.register(False)
+                elif self.path.startswith('/activate'):
+                    page = self.activate()
+                elif self.path.startswith('/login'):
+                    lpage = self.ulogpage(False)
+                    page = lpage[0]
+                elif self.path.startswith('/manage'):
+                    page = self.manage()
+                elif self.path.startswith('/logout'):
+                    page = self.logout()
+                    speccall = True
+                elif self.path.startswith('/edit'):
+                    page = self.edit()
+                elif self.path.startswith('/favicon'):
+                    speccall = True
+                    self.send_response(200)
+                    self.send_header('Content-type', 'image/png')
+                    self.end_headers()
+                    self.wfile.write(icon)
+                elif self.path.startswith('/error'):
+                    1 / 0
+                elif self.path.startswith('/rm'):
+                    page = self.rm()
+                else:
+                    page = self.index()
+                if not speccall:
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/html')
+                    self.end_headers()
+                    page = base % (version, nbar, page)
+                    self.wfile.write(bytes(page, 'utf-8'))
+            except Exception as e:
+                self.send_response(500)
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
-                page = base % (version, nbar, page)
+                page = base % (version, nbar, messagehtml %
+                               ('danger', 'Oops! An error occured when processing your request!'))
                 self.wfile.write(bytes(page, 'utf-8'))
-        except Exception as e:
-            self.send_response(500)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            page = base % (version, nbar, messagehtml %
-                           ('danger', 'Oops! An error occured when processing your request!'))
-            self.wfile.write(bytes(page, 'utf-8'))
-            raise e
+                raise e
 
     def do_POST(self):
         self.cookie = parseCookie(dict(self.headers))

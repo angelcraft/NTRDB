@@ -473,6 +473,32 @@ class myHandler(BaseHTTPRequestHandler):
         else:
             return messagehtml % ('danger', 'You cant manage your plugins because you are not logged in')
 
+    def rm(self):
+        cuser, _ = self.checkAuth()
+        args = parseURL(self.path)
+        if cuser:
+            plugid = int(args['plugid'])
+            if plugid in plugins:
+                if plugid in users[cuser][2]:
+                    if 'sure' not in args:
+                        pg = removal % (
+                            plugid,
+                            plugins[plugid]['name'],
+                            plugins[plugid]['name'])
+                        return pg
+                    else:
+                        del plugins[plugid]
+                        users[cuser][2].pop(users[cuser][2].index(plugid))
+                        with open('plugins.pickle', 'wb') as f:
+                            pickle.dump(plugins, f)
+                        with open('users.pickle', 'wb') as f:
+                            pickle.dump(users, f)
+                        return messagehtml % ('success', 'Your plugin was removed')
+                else:
+                    return messagehtml % ('danger', 'You are not the one who added this plugin!')
+            else:
+                return messagehtml % ('warning', 'No plugin with that ID found.')
+
     def do_GET(self):
         self.cookie = parseCookie(dict(self.headers))
         # print(sessions)
@@ -510,6 +536,8 @@ class myHandler(BaseHTTPRequestHandler):
                 self.wfile.write(icon)
             elif self.path.startswith('/error'):
                 1 / 0
+            elif self.path.startswith('/rm'):
+                page = self.rm()
             else:
                 page = self.index()
             if not speccall:

@@ -28,4 +28,6 @@ with open('html/edit.html') as f:
     editpage = f.read()
 with open('html/manage.html') as f:
     managepage = f.read()
+with open('html/removal.html') as f:
+    removal = f.read()
 print("Pages loaded")

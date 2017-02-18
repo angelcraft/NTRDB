@@ -12,6 +12,8 @@ with open('html/addfile.html') as f:
     addfile = f.read()
 with open('html/links.html') as f:
     links = f.read()
+with open('html/links_manage.html') as f:
+    links_mng = f.read()
 with open('html/nbar_loggedin.html') as f:
     nbar_loggedin = f.read()
 with open('html/nbar_login.html') as f:
@@ -26,4 +28,4 @@ with open('html/edit.html') as f:
     editpage = f.read()
 with open('html/manage.html') as f:
     managepage = f.read()
-print("Pages loaded, loading 3dsdb")
+print("Pages loaded")

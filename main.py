@@ -145,12 +145,12 @@ def getgamebytid(tid):
 class myHandler(BaseHTTPRequestHandler):
 
     def checkAuth(self):
+        """Returns user email and speccall"""
         if len(self.cookie) > 0:
             if 'AToken' in self.cookie:
                 if computeMD5hash(self.cookie['AToken']) in sessions:
                     return sessions[computeMD5hash(self.cookie['AToken'])], False
                 else:
-                    # print("User has bad cookie!")
                     # If user have bad cookie
                     self.send_response(200)
                     self.send_header('Set-Cookie', 'AToken=%s;HttpOnly;%s' %
@@ -158,7 +158,7 @@ class myHandler(BaseHTTPRequestHandler):
                     self.send_header('Content-type', 'text/html')
                     self.end_headers()
                     self.wfile.write(
-                        b'<meta http-equiv="refresh" content="1">')
+                        b'Please wait...<meta http-equiv="refresh" content="1">')
                     return False, True
             else:
                 return False, False
@@ -167,7 +167,9 @@ class myHandler(BaseHTTPRequestHandler):
 
     def ulogpage(self, args):
         cookie = None
-        if self.checkAuth():
+        cuser, _ = self.checkAuth()
+        if cuser:
+            print()
             page = "<META HTTP-EQUIV=\"refresh\" CONTENT=\"1; URL=index\">"
         else:
             if args is not False:
@@ -324,7 +326,7 @@ class myHandler(BaseHTTPRequestHandler):
         return page
 
     def additem(self):
-        cuser = self.checkAuth()
+        cuser = self.checkAuth()[0]
         if cuser:
             message = ""
             parsed = parseURL(self.path)
@@ -353,7 +355,7 @@ class myHandler(BaseHTTPRequestHandler):
                     message = "You havent entered plugin's name!"
                     badreq = True
                     succ = False
-                if not url(plgp) is True or not url(pic) is True or url(devsite):
+                if not url(plgp) or not url(pic) or not url(devsite):
                     message = "You entered bad URL!"
                     badreq = True
                     succ = False
@@ -369,18 +371,18 @@ class myHandler(BaseHTTPRequestHandler):
                     now = datetime.datetime.now()
                     plid = max(plugins) + 1
                     plugins[plid] = {'TitleID': titleid,
-                                                 'name': plugname,
-                                                 'developer': developer,
-                                                 'devsite': devsite,
-                                                 'desc': desc,
-                                                 'plg': plgp,
-                                                 'added': now.strftime("%Y-%m-%d %H:%M"),
-                                                 'timestamp': now.timestamp(),
-                                                 'version': ver,
-                                                 'compatible': cpb,
-                                                 'pic': pic
-                                                 }
-                    users[3].append(plid)
+                                     'name': plugname,
+                                     'developer': developer,
+                                     'devsite': devsite,
+                                     'desc': desc,
+                                     'plg': plgp,
+                                     'added': now.strftime("%Y-%m-%d %H:%M"),
+                                     'timestamp': now.timestamp(),
+                                     'version': ver,
+                                     'compatible': cpb,
+                                     'pic': pic
+                                     }
+                    users[cuser][2].append(plid)
                     with open('plugins.pickle', 'wb') as f:
                         pickle.dump(plugins, f)
                     with open('users.pickle', 'wb') as f:
@@ -395,11 +397,12 @@ class myHandler(BaseHTTPRequestHandler):
             else:
                 page = addfile
         else:
-            page = messagehtml % ('danger', 'You cant add items because you are not logged in.')
+            page = messagehtml % (
+                'danger', 'You cant add items because you are not logged in.')
         return page
 
     def register(self, parsed):
-        if self.checkAuth():
+        if self.checkAuth()[0]:
             page = "<META HTTP-EQUIV=\"refresh\" CONTENT=\"1; URL=index\">"
         else:
             if parsed == False:
@@ -432,7 +435,7 @@ class myHandler(BaseHTTPRequestHandler):
             return page
 
     def logout(self):
-        cuser = self.checkAuth()
+        cuser = self.checkAuth()[0]
         if cuser:
             self.send_response(200)
             self.send_header('Set-Cookie', 'AToken=%s;HttpOnly;%s' %
@@ -441,18 +444,34 @@ class myHandler(BaseHTTPRequestHandler):
             self.end_headers()
             page = bytes(messagehtml % ('success', 'You logged out'), 'utf-8')
             self.wfile.write(base % (version, '', page +
-                b'<meta http-equiv="refresh" content="1; URL=index">'))
+                                     b'<meta http-equiv="refresh" content="1; URL=index">'))
             del sessions[computeMD5hash(self.cookie['AToken'])]
         else:
             page = base % (version, '', messagehtml % ('danger', "<center><figure class=\"figure\">"
-                                  "<img src=\"http://share.mostmodest.ru/2017/02/H2hgPCa.png\" class=\"figure-img img-fluid rounded\" alt=\"meme\">"
-                                  "<figcaption class=\"figure-caption\">You cant logout if you are not logged in.</figcaption>"
-                                  "</figure></center>"))
+                                                       "<img src=\"http://share.mostmodest.ru/2017/02/H2hgPCa.png\" class=\"figure-img img-fluid rounded\" alt=\"meme\">"
+                                                       "<figcaption class=\"figure-caption\">You cant logout if you are not logged in.</figcaption>"
+                                                       "</figure></center>"))
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
             self.wfile.write(bytes(page, 'utf-8'))
-        return 
+        return
+
+    def manage(self):
+        cuser, _ = self.checkAuth()
+        if cuser:
+            uplg = []
+            table = ''
+            for item in users[cuser][2]:
+                if item in plugins:
+                    uplg.append(item)
+            for item in uplg:
+                plugin = plugins[item]
+                table = table + \
+                    links_mng % (plugin['name'], plugin['added'], item, item)
+            return managepage % table
+        else:
+            return messagehtml % ('danger', 'You cant manage your plugins because you are not logged in')
 
     def do_GET(self):
         self.cookie = parseCookie(dict(self.headers))
@@ -478,6 +497,8 @@ class myHandler(BaseHTTPRequestHandler):
             elif self.path.startswith('/login'):
                 lpage = self.ulogpage(False)
                 page = lpage[0]
+            elif self.path.startswith('/manage'):
+                page = self.manage()
             elif self.path.startswith('/logout'):
                 page = self.logout()
                 speccall = True

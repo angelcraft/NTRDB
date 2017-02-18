@@ -30,4 +30,6 @@ with open('html/manage.html') as f:
     managepage = f.read()
 with open('html/removal.html') as f:
     removal = f.read()
+with open('html/links_mod.html') as f:
+    links_mod = f.read()
 print("Pages loaded")

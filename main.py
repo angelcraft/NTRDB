@@ -82,7 +82,6 @@ with open('plugins.pickle', 'wb') as f:
 version = str(
     check_output('git log -n 1 --pretty=format:"%h"', shell=True), 'utf-8')
 print("Connecting to mail server...")
-"""
 try:
     mailsrv = smtplib.SMTP_SSL(
         host=mailsettings.smtpserver, port=mailsettings.smtpport)
@@ -93,8 +92,6 @@ except smtplib.SMTPException as e:
     print("There was an error connecting to mail server!")
     raise e
     raise SystemExit
-"""
-mailsrv = None
 sessions = {}
 
 
@@ -210,6 +207,7 @@ class myHandler(BaseHTTPRequestHandler):
                     page = messagehtml % (
                         'success', 'You successfully activated account!')
                     user[1] = True
+                    user.append([])
                     succ = True
                     with open('users.pickle', 'wb') as f:
                         pickle.dump(users, f)
@@ -319,16 +317,58 @@ class myHandler(BaseHTTPRequestHandler):
                         name = getgamebytid(item["TitleID"])
                     else:
                         name = ""
-                    table = table + links % (
-                        name,
-                        item["name"],
-                        item["compatible"],
-                        item["added"],
-                        item['plg'],
-                        item['devsite'],
-                        idnum
-                    )
+                    if item['approved'] == True:
+                        table = table + links % (
+                            name,
+                            item["name"],
+                            item["compatible"],
+                            item["added"],
+                            item['plg'],
+                            item['devsite'],
+                            idnum
+                        )
         page = index % (table)
+        return page
+
+
+    def moderator(self):
+        table = ""
+        isSearch = False
+        path = self.path[1:]
+        cuser, _ = self.checkAuth()
+        if cuser == "admin@ntrdb":
+            parsed = parseURL(self.path)
+            if not 'allow' in parsed:
+                if not isSearch:
+                    for item in plugins:
+                        if not item == 0:
+                            idnum = item
+                            item = plugins[item]
+                            if not item["TitleID"] == "Not game":
+                                name = getgamebytid(item["TitleID"])
+                            else:
+                                name = ""
+                            if item['approved'] is False:
+                                table = table + links_mod % (
+                                    name,
+                                    item["name"],
+                                    item["compatible"],
+                                    item["added"],
+                                    item['plg'],
+                                    item['devsite'],
+                                    idnum,
+                                    idnum,
+                                    idnum
+                                )
+                page = index % (table)
+            else:
+                plid = int(parsed['allow'])
+                plugins[plid]['approved'] = True
+                with open('plugins.pickle', 'wb') as f:
+                    pickle.dump(plugins, f)
+                page = messagehtml % ('success','Plugin was approved!')
+        else:
+            page = messagehtml % ('info', 'This page avaible only for admin')
         return page
 
     def additem(self):
@@ -376,6 +416,10 @@ class myHandler(BaseHTTPRequestHandler):
                 if not badreq:
                     now = datetime.datetime.now()
                     plid = max(plugins) + 1
+                    if cuser == 'admin@ntrdb':
+                        approved = True
+                    else:
+                        approved = False
                     plugins[plid] = {'TitleID': titleid,
                                      'name': plugname,
                                      'developer': developer,
@@ -386,14 +430,15 @@ class myHandler(BaseHTTPRequestHandler):
                                      'timestamp': now.timestamp(),
                                      'version': ver,
                                      'compatible': cpb,
-                                     'pic': pic
+                                     'pic': pic,
+                                     'approved': approved
                                      }
                     users[cuser][2].append(plid)
                     with open('plugins.pickle', 'wb') as f:
                         pickle.dump(plugins, f)
                     with open('users.pickle', 'wb') as f:
                         pickle.dump(users, f)
-                    message = "Added your plugin!"
+                    message = "Your plugin were added to base. Now you need to wait for moderator to approve it."
                     succ = True
                 if succ:
                     message = messagehtml % ('success', message)
@@ -594,12 +639,16 @@ class myHandler(BaseHTTPRequestHandler):
                 return messagehtml % ('warning', 'No plugin with that ID found.')
 
     def do_GET(self):
+        speccall = False
         self.cookie = parseCookie(dict(self.headers))
         # print(sessions)
         # print(self.cookie)
         cuser, rcookies = self.checkAuth()
         if cuser:
-            nbar = nbar_loggedin % cuser
+            if cuser == 'admin@ntrdb':
+                nbar = nbar_loggedin % (cuser, '<a class="dropdown-item" href="mod">Moderation</a>')
+            else:
+                nbar = nbar_loggedin % (cuser, '')
         else:
             nbar = nbar_login
         if not rcookies:
@@ -620,6 +669,8 @@ class myHandler(BaseHTTPRequestHandler):
                     page = lpage[0]
                 elif self.path.startswith('/manage'):
                     page = self.manage()
+                elif self.path.startswith('/mod'):
+                    page = self.moderator()
                 elif self.path.startswith('/logout'):
                     page = self.logout()
                     speccall = True
@@ -662,6 +713,7 @@ class myHandler(BaseHTTPRequestHandler):
             post_data = self.rfile.read(content_length)
             pdata = parsePost(str(post_data, 'utf-8'))
             if 'rtype' in pdata:
+                scookie = False
                 if pdata['rtype'] == 'loginpg':
                     page, cookie = self.ulogpage(pdata)
                     scookie = True

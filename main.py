@@ -228,7 +228,7 @@ class myHandler(BaseHTTPRequestHandler):
             cuser, _ = self.checkAuth()
             if cuser == 'admin@ntrdb' or gid in users[cuser][2]:
                 options = 'Options:<a href="edit?plugid=%s" class="btn btn-secondary btn-sm">Edit</a><a href="rm?plugid=%s" class="btn btn-danger btn-sm">Remove</a>' % (
-                        parsed['id'])
+                        parsed['id'], parsed['id'])
             else:
                 admintools = ''
             if gid in plugins and not gid == 0:

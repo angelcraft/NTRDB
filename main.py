@@ -360,7 +360,7 @@ class myHandler(BaseHTTPRequestHandler):
                                     idnum,
                                     idnum
                                 )
-                page = index % (table)
+                page = mod % (table)
             else:
                 plid = int(parsed['allow'])
                 plugins[plid]['approved'] = True

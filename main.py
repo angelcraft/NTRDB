@@ -226,6 +226,10 @@ class myHandler(BaseHTTPRequestHandler):
     def description(self):
         parsed = parseURL(self.path)
         if "id" in parsed:
+            if self.checkAuth()[0] == 'admin@ntrdb':
+                admintools = 'Admin tools:<a href="rm?plugid=%s" class="btn btn-danger btn-sm">Remove</a>' % (parsed['id'])
+            else:
+                admintools = ''
             gid = int(parsed["id"])
             if gid in plugins and not gid == 0:
                 item = plugins[gid]
@@ -248,7 +252,7 @@ class myHandler(BaseHTTPRequestHandler):
             succ = False
         if succ:
             page = desc % (
-                name, cpb, ver, dev, gamename, tid, devsite, dlink, descr, pic)
+                name, cpb, ver, dev, gamename, tid, devsite, dlink, descr, pic, admintools)
         else:
             page = messagehtml % (
                 'danger', 'Oops! Looks like you got bad link')
@@ -479,7 +483,7 @@ class myHandler(BaseHTTPRequestHandler):
         if cuser:
             plugid = int(args['plugid'])
             if plugid in plugins:
-                if plugid in users[cuser][2]:
+                if plugid in users[cuser][2] or cuser == 'admin@ntrdb':
                     if 'sure' not in args:
                         pg = removal % (
                             plugid,
@@ -488,7 +492,10 @@ class myHandler(BaseHTTPRequestHandler):
                         return pg
                     else:
                         del plugins[plugid]
-                        users[cuser][2].pop(users[cuser][2].index(plugid))
+                        try:
+                            users[cuser][2].pop(users[cuser][2].index(plugid))
+                        except Exception:
+                            pass
                         with open('plugins.pickle', 'wb') as f:
                             pickle.dump(plugins, f)
                         with open('users.pickle', 'wb') as f:

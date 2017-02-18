@@ -464,7 +464,7 @@ class myHandler(BaseHTTPRequestHandler):
             del sessions[computeMD5hash(self.cookie['AToken'])]
         else:
             page = base % (version, '', messagehtml % ('danger', "<center><figure class=\"figure\">"
-                                  "<img src=\"https://pbs.twimg.com/media/C4vEOtTWYAAXksN.jpg\" class=\"figure-img img-fluid rounded\" alt=\"meme\">"
+                                  "<img src=\"http://share.mostmodest.ru/2017/02/H2hgPCa.png\" class=\"figure-img img-fluid rounded\" alt=\"meme\">"
                                   "<figcaption class=\"figure-caption\">You cant logout if you are not logged in.</figcaption>"
                                   "</figure></center>"))
             self.send_response(200)

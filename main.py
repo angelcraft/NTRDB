@@ -17,6 +17,7 @@ from urllib.request import urlopen
 from validators import url, email
 import mailsettings
 import argparse
+from loader import *
 parser = argparse.ArgumentParser()
 parser.add_argument('-p', '--port', type=int,
                     help='Port for receiving requests', required=False)
@@ -55,37 +56,13 @@ else:
     with open('users.pickle', 'wb') as f:
         pickle.dump(
             {
-                'admin@ntrdb': [pword, True],
+                'admin@ntrdb': [pword, True, []],
             },
             f)
     print(
         "Please restart NTRDB to apply changes")
     raise SystemExit
-with open('resources/favicon.png', 'rb') as f:
-    icon = f.read()
-with open('html/index.html') as f:
-    index = f.read()
-with open('html/desc.html') as f:
-    desc = f.read()
-with open('html/base.html') as f:
-    base = f.read()
-with open('html/message.html') as f:
-    messagehtml = f.read()
-with open('html/addfile.html') as f:
-    addfile = f.read()
-with open('html/links.html') as f:
-    links = f.read()
-with open('html/nbar_loggedin.html') as f:
-    nbar_loggedin = f.read()
-with open('html/nbar_login.html') as f:
-    nbar_login = f.read()
-with open('html/register.html') as f:
-    reg_page = f.read()
-with open('html/login.html') as f:
-    login_page = f.read()
-with open('resources/MailRegText.txt') as f:
-    actmsg = f.read()
-print("Pages loaded, loading 3dsdb")
+
 titles = ET.fromstring(
     str(urlopen('http://3dsdb.com/xml.php').read(), 'utf-8'))
 print("3DSDB loaded, optimising it...")
@@ -171,7 +148,7 @@ class myHandler(BaseHTTPRequestHandler):
         if len(self.cookie) > 0:
             if 'AToken' in self.cookie:
                 if computeMD5hash(self.cookie['AToken']) in sessions:
-                    return sessions[computeMD5hash(self.cookie['AToken'])]
+                    return sessions[computeMD5hash(self.cookie['AToken'])], False
                 else:
                     # print("User has bad cookie!")
                     # If user have bad cookie
@@ -182,11 +159,11 @@ class myHandler(BaseHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(
                         b'<meta http-equiv="refresh" content="1">')
-                    return False
+                    return False, True
             else:
-                return False
+                return False, False
         else:
-            return False
+            return False, False
 
     def ulogpage(self, args):
         cookie = None
@@ -347,7 +324,8 @@ class myHandler(BaseHTTPRequestHandler):
         return page
 
     def additem(self):
-        if self.checkAuth():
+        cuser = self.checkAuth()
+        if cuser:
             message = ""
             parsed = parseURL(self.path)
             if 'add' in parsed:
@@ -379,7 +357,6 @@ class myHandler(BaseHTTPRequestHandler):
                     message = "You entered bad URL!"
                     badreq = True
                     succ = False
-                plgp = plgp
                 for item in plugins:
                     if not item == 0:
                         plugin = plugins[item]
@@ -390,7 +367,8 @@ class myHandler(BaseHTTPRequestHandler):
                             break
                 if not badreq:
                     now = datetime.datetime.now()
-                    plugins[max(plugins) + 1] = {'TitleID': titleid,
+                    plid = max(plugins) + 1
+                    plugins[plid] = {'TitleID': titleid,
                                                  'name': plugname,
                                                  'developer': developer,
                                                  'devsite': devsite,
@@ -402,8 +380,11 @@ class myHandler(BaseHTTPRequestHandler):
                                                  'compatible': cpb,
                                                  'pic': pic
                                                  }
+                    users[3].append(plid)
                     with open('plugins.pickle', 'wb') as f:
                         pickle.dump(plugins, f)
+                    with open('users.pickle', 'wb') as f:
+                        pickle.dump(users, f)
                     message = "Added your plugin!"
                     succ = True
                 if succ:
@@ -475,10 +456,9 @@ class myHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         self.cookie = parseCookie(dict(self.headers))
-        speccall = False
         # print(sessions)
         # print(self.cookie)
-        cuser = self.checkAuth()
+        cuser, speccall = self.checkAuth()
         if cuser:
             nbar = nbar_loggedin % cuser
         else:

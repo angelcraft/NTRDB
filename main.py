@@ -347,71 +347,74 @@ class myHandler(BaseHTTPRequestHandler):
         return page
 
     def additem(self):
-        message = ""
-        parsed = parseURL(self.path)
-        if 'add' in parsed:
-            plgp = parsed["link"]
-            titleid = parsed['tid'].upper()
-            plugname = parsed['name']
-            developer = parsed['developer']
-            devsite = parsed['devsite']
-            desc = parsed['desc']
-            ver = parsed['ver']
-            cpb = parsed['ctype']
-            pic = parsed['pic']
-            badreq = False
-            if plgp == "":
-                message = "You havent entered path to plg file!"
-                badreq = True
-                succ = False
-            if titleid == "":
-                titleid = "Not game"
-            elif not len(titleid) == 16:
-                message = "You entered bad TitleID!"
-                badreq = True
-                succ = False
-            if plugname == "":
-                message = "You havent entered plugin's name!"
-                badreq = True
-                succ = False
-            if not url(plgp) is True or not url(pic) is True or url(devsite):
-                message = "You entered bad URL!"
-                badreq = True
-                succ = False
-            plgp = plgp
-            for item in plugins:
-                if not item == 0:
-                    plugin = plugins[item]
-                    if plugin['plg'] == plgp and plugin['TitleID'] == titleid and plugin['Compatible'] == cpb and plugin['verion'] == ver:
-                        badreq = True
-                        succ = False
-                        message = "Plugin already exists!"
-                        break
-            if not badreq:
-                now = datetime.datetime.now()
-                plugins[max(plugins) + 1] = {'TitleID': titleid,
-                                             'name': plugname,
-                                             'developer': developer,
-                                             'devsite': devsite,
-                                             'desc': desc,
-                                             'plg': plgp,
-                                             'added': now.strftime("%Y-%m-%d %H:%M"),
-                                             'timestamp': now.timestamp(),
-                                             'version': ver,
-                                             'compatible': cpb,
-                                             'pic': pic
-                                             }
-                with open('plugins.pickle', 'wb') as f:
-                    pickle.dump(plugins, f)
-                message = "Added your plugin!"
-                succ = True
-            if succ:
-                message = messagehtml % ('success', message)
+        if self.checkAuth():
+            message = ""
+            parsed = parseURL(self.path)
+            if 'add' in parsed:
+                plgp = parsed["link"]
+                titleid = parsed['tid'].upper()
+                plugname = parsed['name']
+                developer = parsed['developer']
+                devsite = parsed['devsite']
+                desc = parsed['desc']
+                ver = parsed['ver']
+                cpb = parsed['ctype']
+                pic = parsed['pic']
+                badreq = False
+                if plgp == "":
+                    message = "You havent entered path to plg file!"
+                    badreq = True
+                    succ = False
+                if titleid == "":
+                    titleid = "Not game"
+                elif not len(titleid) == 16:
+                    message = "You entered bad TitleID!"
+                    badreq = True
+                    succ = False
+                if plugname == "":
+                    message = "You havent entered plugin's name!"
+                    badreq = True
+                    succ = False
+                if not url(plgp) is True or not url(pic) is True or url(devsite):
+                    message = "You entered bad URL!"
+                    badreq = True
+                    succ = False
+                plgp = plgp
+                for item in plugins:
+                    if not item == 0:
+                        plugin = plugins[item]
+                        if plugin['plg'] == plgp and plugin['TitleID'] == titleid and plugin['Compatible'] == cpb and plugin['verion'] == ver:
+                            badreq = True
+                            succ = False
+                            message = "Plugin already exists!"
+                            break
+                if not badreq:
+                    now = datetime.datetime.now()
+                    plugins[max(plugins) + 1] = {'TitleID': titleid,
+                                                 'name': plugname,
+                                                 'developer': developer,
+                                                 'devsite': devsite,
+                                                 'desc': desc,
+                                                 'plg': plgp,
+                                                 'added': now.strftime("%Y-%m-%d %H:%M"),
+                                                 'timestamp': now.timestamp(),
+                                                 'version': ver,
+                                                 'compatible': cpb,
+                                                 'pic': pic
+                                                 }
+                    with open('plugins.pickle', 'wb') as f:
+                        pickle.dump(plugins, f)
+                    message = "Added your plugin!"
+                    succ = True
+                if succ:
+                    message = messagehtml % ('success', message)
+                else:
+                    message = messagehtml % ('danger', message)
+                page = message
             else:
-                message = messagehtml % ('danger', message)
-            page = message
+                page = addfile
         else:
-            page = addfile
+            page = messagehtml % ('danger', 'You cant add items because you are not logged in.')
         return page
 
     def register(self, parsed):

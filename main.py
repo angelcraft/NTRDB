@@ -105,6 +105,7 @@ with open('plugins.pickle', 'wb') as f:
 version = str(
     check_output('git log -n 1 --pretty=format:"%h"', shell=True), 'utf-8')
 print("Connecting to mail server...")
+"""
 try:
     mailsrv = smtplib.SMTP_SSL(
         host=mailsettings.smtpserver, port=mailsettings.smtpport)
@@ -115,6 +116,8 @@ except smtplib.SMTPException as e:
     print("There was an error connecting to mail server!")
     raise e
     raise SystemExit
+"""
+mailsrv = None
 sessions = {}
 
 
@@ -123,8 +126,9 @@ def parsePost(string):
     parsed = {}
     for item in tmp:
         temp = item.split('=')
-        parsed[unquote(temp[0])] = parsed[unquote(temp[1])]
+        parsed[unquote(temp[0])] = unquote(temp[1])
     return parsed
+
 
 def parseURL(path):
     try:
@@ -162,35 +166,54 @@ def getgamebytid(tid):
 
 
 class myHandler(BaseHTTPRequestHandler):
+    def checkAuth(self):
+        if len(self.cookie) > 0:
+            if 'AToken' in self.cookie:
+                if self.cookie['AToken'] in sessions:
+                    return sessions[self.cookie['AToken']]
+                else:
+                    # If user have bad cookie
+                    self.send_response(200)
+                    self.send_header('Set-Cookie', 'AToken=%s;HttpOnly;%s' %
+                                     (self.cookie['AToken'], 'Expires=Wed, 21 Oct 2015 07:28:00 GMT'))
+                    self.send_header('Content-type', 'text/html')
+                    self.end_headers()
+                    self.wfile.write(
+                        b'<meta http-equiv="refresh" content="1">')
+                    return False
+            else:
+                return False
+        else:
+            return False
 
-    def ulogpage(self):
+    def ulogpage(self, args):
         cookie = None
-        if 'AToken' in self.cookie:
+        if 'AToken' == self.cookies[0][0]:
             page = "<META HTTP-EQUIV=\"refresh\" CONTENT=\"1; URL=index\">"
         else:
-            args = parseURL(self.path)
-            if 'email' in args:
-                if args['email'] in users:
-                    user = users[args['email']]
-                    phash = computeMD5hash(args['pword'])
-                    print(user)
-                    print(phash)
-                    if user[1] is True:
-                        if user[0] == phash:
-                            page = messagehtml % (
-                                'success', "You succesfully logged in, you will redirect to main page in 5 seconds, or you can click Return To Index<META HTTP-EQUIV=\"refresh\" CONTENT=\"5; URL=index\">")
-                            cookie = str(uuid4())
-                            sessions[computeMD5hash(cookie)] = args['email']
+            if args is not False:
+                if 'email' in args:
+                    if args['email'] in users:
+                        user = users[args['email']]
+                        phash = computeMD5hash(args['pword'])
+                        print(user)
+                        print(phash)
+                        if user[1] is True:
+                            if user[0] == phash:
+                                page = messagehtml % (
+                                    'success', "You succesfully logged in, you will redirect to main page in 5 seconds, or you can click Return To Index<META HTTP-EQUIV=\"refresh\" CONTENT=\"5; URL=index\">")
+                                cookie = str(uuid4())
+                                sessions[computeMD5hash(cookie)] = args['email']
+                            else:
+                                page = messagehtml % (
+                                    'danger', 'You entered wrong password or email')
                         else:
                             page = messagehtml % (
-                                'danger', 'You entered wrong password or email')
+                                'danger', 'This account hasnt activated yet.')
+                            print(page)
                     else:
                         page = messagehtml % (
-                            'danger', 'This account hasnt activated yet.')
-                        print(page)
-                else:
-                    page = messagehtml % (
-                        'danger', 'You entered wrong password or email')
+                            'danger', 'You entered wrong password or email')
             else:
                 page = login_page
         return page, cookie
@@ -388,23 +411,20 @@ class myHandler(BaseHTTPRequestHandler):
             page = addfile
         return page
 
-    def register(self):
-        if 'AToken' in self.cookie:
+    def register(self, parsed):
+        if 'AToken' == self.cookie[0][0]:
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
             page = "<META HTTP-EQUIV=\"refresh\" CONTENT=\"1; URL=index\">"
             self.wfile.write(bytes(page, 'utf-8'))
         else:
-            parsed = parseURL(self.path)
             if parsed == {}:
                 page = reg_page
             else:
                 pwordh = computeMD5hash(parsed['pword'])
                 mail = parsed['email']
                 del parsed  # FORGET PASSWORD
-                # Btw, it useless, because we cant remove self.path(I think)
-                # But it frees some memory so it is good!
                 if email(mail):
                     if mail in users:
                         page = messagehtml % (
@@ -433,21 +453,9 @@ class myHandler(BaseHTTPRequestHandler):
         speccall = False
         print(sessions)
         print(self.cookie)
-        if len(self.cookie) > 0:
-            if 'AToken' == self.cookie[0]:
-                if self.cookie[1] in sessions:
-                    uname = sessions[self.cookie['AToken']]
-                    nbar = nbar_loggedin % (uname)
-                else:
-                    # If user have bad cookie
-                    self.send_response(200)
-                    self.send_header('Set-Cookie', 'AToken=%s;HttpOnly;%s' %
-                                     (self.cookie[1], 'Expires=Wed, 21 Oct 2015 07:28:00 GMT'))
-                    self.send_header('Content-type', 'text/html')
-                    self.end_headers()
-                    self.wfile.write(b'<meta http-equiv="refresh" content="1">')
-            else:
-                nbar = nbar_login
+        cuser = self.checkAuth()
+        if cuser:
+            nbar = nbar % cuser
         else:
             nbar = nbar_login
         try:
@@ -463,10 +471,9 @@ class myHandler(BaseHTTPRequestHandler):
             elif self.path.startswith('/activate'):
                 page = self.activate()
             elif self.path.startswith('/login'):
-                lpage = self.ulogpage()
+                lpage = self.ulogpage(False)
                 page = lpage[0]
                 cookie = lpage[1]
-                print(cookie)
             elif self.path.startswith('/favicon'):
                 speccall = True
                 self.send_response(200)
@@ -480,11 +487,6 @@ class myHandler(BaseHTTPRequestHandler):
             if not speccall:
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
-                if 'cookie' in locals():
-                    if cookie is not None:
-                        print("Adding cookie!")
-                        self.send_header(
-                            'Set-Cookie', 'AToken=%s;HttpOnly' % (cookie))
                 self.end_headers()
                 page = base % (version, nbar, page)
                 self.wfile.write(bytes(page, 'utf-8'))
@@ -496,15 +498,41 @@ class myHandler(BaseHTTPRequestHandler):
                            ('danger', 'Oops! An error occured when processing your request!'))
             self.wfile.write(bytes(page, 'utf-8'))
             raise e
+
     def do_POST(self):
+        self.cookie = parseCookie(dict(self.headers))
         # Doesn't do anything with posted data
-        content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
-        post_data = self.rfile.read(content_length) # <--- Gets the data itself
-        print(parsePost(str(post_data, 'utf-8')))
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html')
-        self.end_headers()
-        self.wfile.write(b"<html><body><h1>POST!</h1></body></html>")
+        try:
+            # <--- Gets the size of data
+            content_length = int(self.headers['Content-Length'])
+            # <--- Gets the data itself
+            post_data = self.rfile.read(content_length)
+            pdata = parsePost(str(post_data, 'utf-8'))
+            if 'rtype' in pdata:
+                if pdata['rtype'] == 'loginpg':
+                    page, cookie = self.ulogpage(pdata)
+                    scookie = True
+                elif pdata['rtype'] == 'regpg':
+                    page = self.register(pdata)
+                self.send_response(200)
+                self.send_header('Content-type', 'text/html')
+                if scookie:
+                    self.send_header('Set-Cookie', 'AToken=%s' %(cookie))
+                self.end_headers()
+                self.wfile.write(bytes(base % (version, "", page)), 'utf-8')
+            else:
+                self.send_response(400)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                self.wfile.write(bytes(base % (version, "", messagehtml % ('danger', 'Bad request!'))), 'utf-8')
+        except Exception as e:
+            self.send_response(500)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            page = base % (version, "", messagehtml %
+                           ('danger', 'Oops! An error occured when processing your request!'))
+            self.wfile.write(bytes(page, 'utf-8'))
+            raise e
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):

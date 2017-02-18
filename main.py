@@ -154,7 +154,7 @@ class myHandler(BaseHTTPRequestHandler):
                     # If user have bad cookie
                     self.send_response(200)
                     self.send_header('Set-Cookie', 'AToken=%s;HttpOnly;%s' %
-                                      (self.cookie['AToken'], 'Expires=Wed, 21 Oct 2007 07:28:00 GMT'))
+                                     (self.cookie['AToken'], 'Expires=Wed, 21 Oct 2007 07:28:00 GMT'))
                     self.send_header('Content-type', 'text/html')
                     self.end_headers()
                     self.wfile.write(
@@ -226,12 +226,13 @@ class myHandler(BaseHTTPRequestHandler):
     def description(self):
         parsed = parseURL(self.path)
         if "id" in parsed:
-            if self.checkAuth()[0] == 'admin@ntrdb':
-                admintools = 'Admin tools:<a href="rm?plugid=%s" class="btn btn-danger btn-sm">Remove</a>' % (parsed[
-                                                                                                              'id'])
+            gid = int(parsed["id"])
+            cuser, _ = self.checkAuth()
+            if cuser == 'admin@ntrdb' or gid in users[cuser][2]:
+                options = 'Options:<a href="edit?plugid=%s" class="btn btn-secondary btn-sm">Edit</a><a href="rm?plugid=%s" class="btn btn-danger btn-sm">Remove</a>' % (
+                        parsed['id'])
             else:
                 admintools = ''
-            gid = int(parsed["id"])
             if gid in plugins and not gid == 0:
                 item = plugins[gid]
                 name = str(item['name'])

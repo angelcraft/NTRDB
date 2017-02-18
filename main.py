@@ -25,7 +25,7 @@ port = args.port
 
 
 def computeMD5hash(string):
-    m = hashlib.sha256()
+    m = hashlib.sha512()
     string = str(string)
     m.update(string.encode('utf-8'))
     return m.hexdigest()
@@ -166,6 +166,7 @@ def getgamebytid(tid):
 
 
 class myHandler(BaseHTTPRequestHandler):
+
     def checkAuth(self):
         if len(self.cookie) > 0:
             if 'AToken' in self.cookie:
@@ -204,7 +205,8 @@ class myHandler(BaseHTTPRequestHandler):
                                 page = messagehtml % (
                                     'success', "You succesfully logged in, you will redirect to main page in 5 seconds, or you can click Return To Index<META HTTP-EQUIV=\"refresh\" CONTENT=\"5; URL=index\">")
                                 cookie = str(uuid4())
-                                sessions[computeMD5hash(cookie)] = args['email']
+                                sessions[
+                                    computeMD5hash(cookie)] = args['email']
                             else:
                                 page = messagehtml % (
                                     'danger', 'You entered wrong password or email')
@@ -445,6 +447,29 @@ class myHandler(BaseHTTPRequestHandler):
                     page = messagehtml % ('danger', "You entered bad email.")
             return page
 
+    def logout(self):
+        cuser = self.checkAuth()
+        if cuser:
+            self.send_response(200)
+            self.send_header('Set-Cookie', 'AToken=%s;HttpOnly;%s' %
+                             (self.cookie['AToken'], 'Expires=Wed, 21 Oct 2007 07:28:00 GMT'))
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            page = bytes(messagehtml % ('success', 'You logged out'), 'utf-8')
+            self.wfile.write(base % (version, '', page +
+                b'<meta http-equiv="refresh" content="1; URL=index">'))
+            del sessions[computeMD5hash(self.cookie['AToken'])]
+        else:
+            page = base % (version, '', messagehtml % ('danger', "<center><figure class=\"figure\">"
+                                  "<img src=\"https://pbs.twimg.com/media/C4vEOtTWYAAXksN.jpg\" class=\"figure-img img-fluid rounded\" alt=\"meme\">"
+                                  "<figcaption class=\"figure-caption\">You cant logout if you are not logged in.</figcaption>"
+                                  "</figure></center>"))
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(bytes(page, 'utf-8'))
+        return 
+
     def do_GET(self):
         self.cookie = parseCookie(dict(self.headers))
         speccall = False
@@ -470,6 +495,9 @@ class myHandler(BaseHTTPRequestHandler):
             elif self.path.startswith('/login'):
                 lpage = self.ulogpage(False)
                 page = lpage[0]
+            elif self.path.startswith('/logout'):
+                page = self.logout()
+                speccall = True
             elif self.path.startswith('/favicon'):
                 speccall = True
                 self.send_response(200)
@@ -515,14 +543,15 @@ class myHandler(BaseHTTPRequestHandler):
                 if scookie:
                     # print(scookie)
                     # print(cookie)
-                    self.send_header('Set-Cookie', 'AToken=%s' %(cookie))
+                    self.send_header('Set-Cookie', 'AToken=%s' % (cookie))
                 self.end_headers()
                 self.wfile.write(bytes(base % (version, "", page), 'utf-8'))
             else:
                 self.send_response(400)
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
-                self.wfile.write(bytes(base % (version, "", messagehtml % ('danger', 'Bad request!'))), 'utf-8')
+                self.wfile.write(
+                    bytes(base % (version, "", messagehtml % ('danger', 'Bad request!'))), 'utf-8')
         except Exception as e:
             self.send_response(500)
             self.send_header('Content-type', 'text/html')

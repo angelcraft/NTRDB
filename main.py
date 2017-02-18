@@ -169,13 +169,14 @@ class myHandler(BaseHTTPRequestHandler):
     def checkAuth(self):
         if len(self.cookie) > 0:
             if 'AToken' in self.cookie:
-                if self.cookie['AToken'] in sessions:
-                    return sessions[self.cookie['AToken']]
+                if computeMD5hash(self.cookie['AToken']) in sessions:
+                    return sessions[computeMD5hash(self.cookie['AToken'])]
                 else:
+                    print("User has bad cookie!")
                     # If user have bad cookie
                     self.send_response(200)
                     self.send_header('Set-Cookie', 'AToken=%s;HttpOnly;%s' %
-                                     (self.cookie['AToken'], 'Expires=Wed, 21 Oct 2015 07:28:00 GMT'))
+                                     (self.cookie['AToken'], 'Expires=Wed, 21 Oct 2007 07:28:00 GMT'))
                     self.send_header('Content-type', 'text/html')
                     self.end_headers()
                     self.wfile.write(
@@ -188,7 +189,7 @@ class myHandler(BaseHTTPRequestHandler):
 
     def ulogpage(self, args):
         cookie = None
-        if 'AToken' == self.cookies[0][0]:
+        if self.checkAuth():
             page = "<META HTTP-EQUIV=\"refresh\" CONTENT=\"1; URL=index\">"
         else:
             if args is not False:
@@ -412,12 +413,8 @@ class myHandler(BaseHTTPRequestHandler):
         return page
 
     def register(self, parsed):
-        if 'AToken' == self.cookie[0][0]:
-            self.send_response(200)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
+        if self.checkAuth():
             page = "<META HTTP-EQUIV=\"refresh\" CONTENT=\"1; URL=index\">"
-            self.wfile.write(bytes(page, 'utf-8'))
         else:
             if parsed == {}:
                 page = reg_page
@@ -455,7 +452,7 @@ class myHandler(BaseHTTPRequestHandler):
         print(self.cookie)
         cuser = self.checkAuth()
         if cuser:
-            nbar = nbar % cuser
+            nbar = nbar_loggedin % cuser
         else:
             nbar = nbar_login
         try:
@@ -517,9 +514,11 @@ class myHandler(BaseHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
                 if scookie:
+                    print(scookie)
+                    print(cookie)
                     self.send_header('Set-Cookie', 'AToken=%s' %(cookie))
                 self.end_headers()
-                self.wfile.write(bytes(base % (version, "", page)), 'utf-8')
+                self.wfile.write(bytes(base % (version, "", page), 'utf-8'))
             else:
                 self.send_response(400)
                 self.send_header('Content-type', 'text/html')

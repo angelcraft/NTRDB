@@ -25,7 +25,7 @@ port = args.port
 
 
 def computeMD5hash(string):
-    m = hashlib.md5()
+    m = hashlib.sha256()
     string = str(string)
     m.update(string.encode('utf-8'))
     return m.hexdigest()
@@ -416,7 +416,7 @@ class myHandler(BaseHTTPRequestHandler):
         if self.checkAuth():
             page = "<META HTTP-EQUIV=\"refresh\" CONTENT=\"1; URL=index\">"
         else:
-            if parsed == {}:
+            if parsed == False:
                 page = reg_page
             else:
                 pwordh = computeMD5hash(parsed['pword'])
@@ -464,13 +464,12 @@ class myHandler(BaseHTTPRequestHandler):
             elif self.path.startswith('/description'):
                 page = self.description()
             elif self.path.startswith('/reg'):
-                page = self.register()
+                page = self.register(False)
             elif self.path.startswith('/activate'):
                 page = self.activate()
             elif self.path.startswith('/login'):
                 lpage = self.ulogpage(False)
                 page = lpage[0]
-                cookie = lpage[1]
             elif self.path.startswith('/favicon'):
                 speccall = True
                 self.send_response(200)

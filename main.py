@@ -246,7 +246,7 @@ class myHandler(BaseHTTPRequestHandler):
                 descr = str(item['desc'])
                 cpb = str(item['compatible'])
                 if not str(item['pic']) == "":
-                    pic = "<p>Screenshot:</p><img src=\"%s\">" % (
+                    pic = "<p>Screenshot:</p><img src=\"%s\" class=\"screenshot\"">" % (
                         str(item['pic']))
                 else:
                     pic = ""

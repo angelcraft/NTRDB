@@ -55,7 +55,7 @@ else:
     with open('users.pickle', 'wb') as f:
         pickle.dump(
             {
-                'Admin': [pword, True],
+                'admin@ntrdb': [pword, True],
             },
             f)
     print(
@@ -172,7 +172,7 @@ class myHandler(BaseHTTPRequestHandler):
                 if computeMD5hash(self.cookie['AToken']) in sessions:
                     return sessions[computeMD5hash(self.cookie['AToken'])]
                 else:
-                    print("User has bad cookie!")
+                    # print("User has bad cookie!")
                     # If user have bad cookie
                     self.send_response(200)
                     self.send_header('Set-Cookie', 'AToken=%s;HttpOnly;%s' %
@@ -197,8 +197,8 @@ class myHandler(BaseHTTPRequestHandler):
                     if args['email'] in users:
                         user = users[args['email']]
                         phash = computeMD5hash(args['pword'])
-                        print(user)
-                        print(phash)
+                        # print(user)
+                        # print(phash)
                         if user[1] is True:
                             if user[0] == phash:
                                 page = messagehtml % (
@@ -211,7 +211,7 @@ class myHandler(BaseHTTPRequestHandler):
                         else:
                             page = messagehtml % (
                                 'danger', 'This account hasnt activated yet.')
-                            print(page)
+                            # print(page)
                     else:
                         page = messagehtml % (
                             'danger', 'You entered wrong password or email')
@@ -448,8 +448,8 @@ class myHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.cookie = parseCookie(dict(self.headers))
         speccall = False
-        print(sessions)
-        print(self.cookie)
+        # print(sessions)
+        # print(self.cookie)
         cuser = self.checkAuth()
         if cuser:
             nbar = nbar_loggedin % cuser
@@ -514,8 +514,8 @@ class myHandler(BaseHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
                 if scookie:
-                    print(scookie)
-                    print(cookie)
+                    # print(scookie)
+                    # print(cookie)
                     self.send_header('Set-Cookie', 'AToken=%s' %(cookie))
                 self.end_headers()
                 self.wfile.write(bytes(base % (version, "", page), 'utf-8'))

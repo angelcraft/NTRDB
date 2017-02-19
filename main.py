@@ -704,14 +704,16 @@ class myHandler(BaseHTTPRequestHandler):
                     self.send_response(200)
                     self.send_header('Content-type', 'text/html')
                     self.end_headers()
-                    page = base % (version, nbar, page, str(timer_stop - timer_start))
+                    page = base % (nbar, page, version, str(timer_stop - timer_start))
                     self.wfile.write(bytes(page, 'utf-8'))
             except Exception as e:
+                timer_stop = time()
                 self.send_response(500)
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
-                page = base % (version, nbar, messagehtml %
-                               ('danger', 'Oops! An error occured when processing your request!'))
+                page = base % (nbar, messagehtml %
+                               ('danger', 'Oops! An error occured when processing your request!'),
+                               version, str(timer_stop - timer_start))
                 self.wfile.write(bytes(page, 'utf-8'))
                 raise e
 

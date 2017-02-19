@@ -16,6 +16,7 @@ from uuid import uuid4
 from urllib.request import urlopen
 from validators import url, email
 #import mailsettings
+from time import time
 import argparse
 from loader import *
 parser = argparse.ArgumentParser()
@@ -648,6 +649,7 @@ class myHandler(BaseHTTPRequestHandler):
                 return messagehtml % ('warning', 'No plugin with that ID found.')
 
     def do_GET(self):
+        timer_start = time()
         speccall = False
         self.cookie = parseCookie(dict(self.headers))
         # print(sessions)
@@ -698,10 +700,11 @@ class myHandler(BaseHTTPRequestHandler):
                 else:
                     page = self.index()
                 if not speccall:
+                    timer_stop = time()
                     self.send_response(200)
                     self.send_header('Content-type', 'text/html')
                     self.end_headers()
-                    page = base % (version, nbar, page)
+                    page = base % (version, nbar, page, str(timer_stop - timer_start))
                     self.wfile.write(bytes(page, 'utf-8'))
             except Exception as e:
                 self.send_response(500)
@@ -761,7 +764,7 @@ try:
     if port:
         server = ThreadedHTTPServer(('', port), myHandler)
     else:
-        server = ThreadedHTTPServer(('', 4443), myHandler)
+        server = ThreadedHTTPServer(('', 8080), myHandler)
 
     print('Started httpserver')
 

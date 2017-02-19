@@ -14,7 +14,7 @@ from html import escape
 from uuid import uuid4
 from urllib.request import urlopen
 from validators import url, email
-#import mailsettings
+import mailsettings
 import argparse
 from loader import *
 import dataset
@@ -747,7 +747,7 @@ try:
     if port:
         server = ThreadedHTTPServer(('', port), myHandler)
     else:
-        server = ThreadedHTTPServer(('', 4443), myHandler)
+        server = ThreadedHTTPServer(('', 8080), myHandler)
 
     print('Started httpserver')
 

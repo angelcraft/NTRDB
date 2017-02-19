@@ -15,7 +15,7 @@ from html import escape
 from uuid import uuid4
 from urllib.request import urlopen
 from validators import url, email
-import mailsettings
+#import mailsettings
 import argparse
 from loader import *
 parser = argparse.ArgumentParser()

@@ -37,19 +37,7 @@ print("Checking DB for required keys...")
 
 version = str(
     check_output('git log -n 1 --pretty=format:"%h"', shell=True), 'utf-8')
-print("Connecting to mail server...")
-try:
-    mailsrv = smtplib.SMTP(
-        host=mailsettings.smtpserver, port=mailsettings.smtpport)
-    mailsrv.ehlo()
-    mailsrv.starttls()
-    print("Logging in...")
-    mailsrv.login(mailsettings.user, mailsettings.password)
-    print("Logged in!")
-except smtplib.SMTPException as e:
-    print("There was an error connecting to mail server!")
-    raise e
-    raise SystemExit
+
 sessions = {}
 
 def computeMD5hash(string):
@@ -167,10 +155,10 @@ class myHandler(BaseHTTPRequestHandler):
 
     def register(self, parsed):
         if self.checkAuth()[0]:
-            page = "<META HTTP-EQUIV=\"refresh\" CONTENT=\"1; URL=index\">"
+            return "<META HTTP-EQUIV=\"refresh\" CONTENT=\"1; URL=index\">"
         else:
             if not  parsed:
-                page = reg_page
+                return reg_page
             else:
                 pwordh = computeMD5hash(parsed['pword'])
                 mail = parsed['email']
@@ -179,43 +167,58 @@ class myHandler(BaseHTTPRequestHandler):
                     if self.users.find_one(email=mail)!=None:
                         if not self.users.find_one(email=mail)['activate']:
                             user=self.users.find_one(email=mail)
-                            msg = MIMEText(actmsg % (user['email'], user['uuid']))
-                            msg['Subject'] = 'Confirm activation on NTRDB'
-                            msg['From'] = mailsettings.user
-                            msg['To'] = mail
-                            while 1:
-                                try:
-                                    mailsrv.send_message(msg)
-                                except smtplib.SMTPException:
-                                    pass
-                                else:
-                                    return messagehtml % (
-                            'info', "resending the activation mail ntrdb@octonezd.pw!")
-                                    break
-
-                        page = messagehtml % (
+                            if self.send_mail(user["email"], user["uuid"]):
+                                return messagehtml % (
+                                            'info', "Resending the activation mail ntrdb@octonezd.pw!")
+                            else:
+                                return messagehtml % (
+                                            "danger", "failed to reach the mailserver. Please try again later")
+                        return messagehtml % (
                             'danger', "This email is already registered")
                     else:
                         tmp = []
                         dmp = json.dumps(tmp)
-                        user={'uuid': str(uuid4()), 'email': mail, 'hash' : pwordh, 'plugins': dmp,'activate': False}
+                        user={'uuid': str(uuid4()), 
+                              'email': mail, 
+                              'hash' : pwordh, 
+                              'plugins': dmp,
+                              'activate': False}
                         self.users.insert(user)
-                        msg = MIMEText(actmsg % (user['email'], user['uuid']))
-                        msg['Subject'] = 'Confirm activation on NTRDB'
-                        msg['From'] = mailsettings.user
-                        msg['To'] = mail
-                        while 1:
-                            try:
-                                mailsrv.send_message(msg)
-                            except smtplib.SMTPException:
-                                pass
-                            else:
-                                break
-                        page = messagehtml % (
-                            'info', "You almost registered! Now please check your email for activation message from ntrdb@octonezd.pw!")
+                        if self.send_mail(user["email"], user["uuid"]):
+                            return messagehtml % (
+                                'info', "You almost registered! Now please check your email for activation message from ntrdb@octonezd.pw!")
+                        else:
+                            return messagehtml% (
+                                "danger", "failed to reach the mailserver. Please try again later")
                 else:
-                    page = messagehtml % ('danger', "You entered bad email.")
-            return page
+                    return messagehtml % ('danger', "You entered bad email.")
+
+    def send_mail(self, mail, uid):
+        print("Connecting to mail server...")
+        try:
+            print("Connectin to the mail server")
+            mailsrv = smtplib.SMTP(
+                host=mailsettings.smtpserver, port=mailsettings.smtpport)
+            mailsrv.ehlo()
+            mailsrv.starttls()
+            print("Logging in...")
+            mailsrv.login(mailsettings.user, mailsettings.password)
+            print("Logged in!")
+        except smtplib.SMTPException as e:
+            mailsrv.close()
+            return False
+        msg = MIMEText(actmsg % (mail, uid))
+        msg['Subject'] = 'Confirm activation on NTRDB'
+        msg['From'] = mailsettings.user
+        msg['To'] = mail
+        try:
+            mailsrv.send_message(msg)
+        except smtplib.SMTPException:
+            mailsrv.close()
+            return False
+        else:
+            mailsrv.close()
+            return True
 
     def activate(self):
         args = parseURL(self.path)
@@ -533,9 +536,7 @@ class myHandler(BaseHTTPRequestHandler):
                 query = str(parsed['search'])
                 isSearch = True
                 results = []
-                for item in self.plugins.all():
-                    plugin = item
-                    plugin['id'] = num
+                for plugin in self.plugins.all():
                     if str(plugin['TitleID']).startswith(query) or query.upper() in str(plugin['name']).upper() or query.upper() in str(getgamebytid(plugin["TitleID"])).upper():
                         results.append(plugin)
                 for item in results:

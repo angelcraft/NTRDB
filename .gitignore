@@ -144,3 +144,4 @@ read.py
 mailsettings.py
 users.pickle
 mailsettings.py
+*.db

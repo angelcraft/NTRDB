@@ -1,11 +1,10 @@
 import smtplib
 from email.mime.text import MIMEText
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import pickle
 from os.path import exists
 import datetime
 from urllib.parse import unquote
-from json import dumps
+import json
 import hashlib
 from socketserver import ThreadingMixIn
 import threading
@@ -18,50 +17,13 @@ from validators import url, email
 import mailsettings
 import argparse
 from loader import *
+import dataset
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-p', '--port', type=int,
                     help='Port for receiving requests', required=False)
 args = parser.parse_args()
 port = args.port
-
-
-def computeMD5hash(string):
-    m = hashlib.sha512()
-    string = str(string)
-    m.update(string.encode('utf-8'))
-    return m.hexdigest()
-
-
-if exists('plugins.pickle'):
-    with open('plugins.pickle', 'rb') as f:
-        plugins = pickle.load(f)
-else:
-    with open('plugins.pickle', 'wb') as f:
-        pickle.dump(
-            {
-                0: None,
-            },
-            f)
-    print(
-        "Plugin database wasnt found. The one were created, to apply it please restart NTRDB")
-    raise SystemExit
-if exists('users.pickle'):
-    with open('users.pickle', 'rb') as f:
-        users = pickle.load(f)
-else:
-    print(
-        'Looks like you are running NTRDB first time or you removed users.pickle file.')
-    print('Please set admin password.')
-    pword = computeMD5hash(input())
-    with open('users.pickle', 'wb') as f:
-        pickle.dump(
-            {
-                'admin@ntrdb': [pword, True, []],
-            },
-            f)
-    print(
-        "Please restart NTRDB to apply changes")
-    raise SystemExit
 
 titles = ET.fromstring(
     str(urlopen('http://3dsdb.com/xml.php').read(), 'utf-8'))
@@ -72,19 +34,15 @@ for item in titles:
 del titles
 print("DONE!")
 print("Checking DB for required keys...")
-for item in plugins:
-    if not item == 0:
-        if not 'pic' in plugins[item]:
-            plugins[item]['pic'] = ""
-        plugins[item]['TitleID'] = plugins[item]['TitleID'].upper()
-with open('plugins.pickle', 'wb') as f:
-    pickle.dump(plugins, f)
+
 version = str(
     check_output('git log -n 1 --pretty=format:"%h"', shell=True), 'utf-8')
 print("Connecting to mail server...")
 try:
-    mailsrv = smtplib.SMTP_SSL(
+    mailsrv = smtplib.SMTP(
         host=mailsettings.smtpserver, port=mailsettings.smtpport)
+    mailsrv.ehlo()
+    mailsrv.starttls()
     print("Logging in...")
     mailsrv.login(mailsettings.user, mailsettings.password)
     print("Logged in!")
@@ -94,6 +52,11 @@ except smtplib.SMTPException as e:
     raise SystemExit
 sessions = {}
 
+def computeMD5hash(string):
+    m = hashlib.sha512()
+    string = str(string)
+    m.update(string.encode('utf-8'))
+    return m.hexdigest()
 
 def parsePost(string):
     tmp = string.split('&')
@@ -140,6 +103,16 @@ def getgamebytid(tid):
 
 
 class myHandler(BaseHTTPRequestHandler):
+    db=None
+    plugins=None
+    users=None
+    def __init__(self, *args, **kwargs):
+        self.db=dataset.connect("sqlite:///plugs.db") #srry
+        self.plugins = self.db.get_table('Plugins')
+        self.users = self.db.get_table('Users', primary_id='uuid', primary_type='String(36)')
+        super(myHandler, self).__init__(*args, **kwargs)
+
+#######################User zone#################################
 
     def checkAuth(self):
         """Returns user email and speccall"""
@@ -166,30 +139,25 @@ class myHandler(BaseHTTPRequestHandler):
         cookie = None
         cuser, _ = self.checkAuth()
         if cuser:
-            print()
             page = "<META HTTP-EQUIV=\"refresh\" CONTENT=\"1; URL=index\">"
         else:
             if args is not False:
                 if 'email' in args:
-                    if args['email'] in users:
-                        user = users[args['email']]
+                    user = self.users.find_one(email=args["email"])
+                    if user!=None:
                         phash = computeMD5hash(args['pword'])
-                        # print(user)
-                        # print(phash)
-                        if user[1] is True:
-                            if user[0] == phash:
+                        if user['activate']:
+                            if user['hash'] == phash:
                                 page = messagehtml % (
                                     'success', "You succesfully logged in, you will redirect to main page in 5 seconds, or you can click Return To Index<META HTTP-EQUIV=\"refresh\" CONTENT=\"5; URL=index\">")
                                 cookie = str(uuid4())
-                                sessions[
-                                    computeMD5hash(cookie)] = args['email']
+                                sessions[computeMD5hash(cookie)] = args['email']
                             else:
                                 page = messagehtml % (
                                     'danger', 'You entered wrong password or email')
                         else:
                             page = messagehtml % (
                                 'danger', 'This account hasnt activated yet.')
-                            # print(page)
                     else:
                         page = messagehtml % (
                             'danger', 'You entered wrong password or email')
@@ -197,20 +165,54 @@ class myHandler(BaseHTTPRequestHandler):
                 page = login_page
         return page, cookie
 
+    def register(self, parsed):
+        if self.checkAuth()[0]:
+            page = "<META HTTP-EQUIV=\"refresh\" CONTENT=\"1; URL=index\">"
+        else:
+            if not  parsed:
+                page = reg_page
+            else:
+                pwordh = computeMD5hash(parsed['pword'])
+                mail = parsed['email']
+                del parsed  # FORGET PASSWORD
+                if email(mail):
+                    if self.users.find_one(email=mail)!=None:
+                        page = messagehtml % (
+                            'danger', "This email is already registered")
+                    else:
+                        tmp = []
+                        dmp = json.dumps(tmp)
+                        user={'uuid': str(uuid4()), 'email': mail, 'hash' : pwordh, 'plugins': dmp,'activate': False}
+                        self.users.insert(user)
+                        msg = MIMEText(actmsg % (user['email'], user['uuid']))
+                        msg['Subject'] = 'Confirm activation on NTRDB'
+                        msg['From'] = mailsettings.user
+                        msg['To'] = mail
+                        while 1:
+                            try:
+                                mailsrv.send_message(msg)
+                            except smtplib.SMTPException:
+                                pass
+                            else:
+                                break
+                        page = messagehtml % (
+                            'info', "You almost registered! Now please check your email for activation message from ntrdb@octonezd.pw!")
+                else:
+                    page = messagehtml % ('danger', "You entered bad email.")
+            return page
+
     def activate(self):
         args = parseURL(self.path)
         if 'id' in args:
             uid = args['id']
-            for user in users:
-                user = users[user]
-                if user[1] == uid:
+            for user in self.users.all():
+                if user['uuid'] == uid:
                     page = messagehtml % (
                         'success', 'You successfully activated account!')
-                    user[1] = True
-                    user.append([])
+                    user['activate'] = True
+                    self.users.update(user, ['uuid'])
                     succ = True
-                    with open('users.pickle', 'wb') as f:
-                        pickle.dump(users, f)
+                    print(str(self.users.find_one(uuid=uid)))
                     break
         else:
             succ = False
@@ -221,119 +223,29 @@ class myHandler(BaseHTTPRequestHandler):
             page = messagehtml % ('danger', 'Looks like you got bad link :(')
         return page
 
-    def description(self):
-        parsed = parseURL(self.path)
-        if "id" in parsed:
-            gid = int(parsed["id"])
-            cuser, _ = self.checkAuth()
-            try:
-                if cuser == 'admin@ntrdb' or gid in users[cuser][2]:
-                    options = 'Options:<a href="edit?plugid=%s" class="btn btn-secondary btn-sm">Edit</a><a href="rm?plugid=%s" class="btn btn-danger btn-sm">Remove</a>' % (
-                            parsed['id'], parsed['id'])
-                else:
-                    options = ''
-            except KeyError:
-                options = ''
-            if gid in plugins and not gid == 0:
-                item = plugins[gid]
-                name = str(item['name'])
-                ver = str(item['version'])
-                dev = str(item['developer'])
-                gamename = str(getgamebytid(item['TitleID']))
-                tid = str(item['TitleID'])
-                devsite = str(item['devsite'])
-                dlink = str(item['plg'])
-                descr = str(item['desc'])
-                cpb = str(item['compatible'])
-                if not str(item['pic']) == "":
-                    pic = "<p>Screenshot:</p><img src=\"%s\" class=\"screenshot\">" % (
-                        str(item['pic']))
-                else:
-                    pic = ""
-                succ = True
+    def logout(self):
+        cuser = self.checkAuth()[0]
+        if cuser:
+            self.send_response(200)
+            self.send_header('Set-Cookie', 'AToken=%s;HttpOnly;%s' %
+                             (self.cookie['AToken'], 'Expires=Wed, 21 Oct 2007 07:28:00 GMT'))
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            page = bytes(messagehtml % ('success', 'You logged out'), 'utf-8')
+            self.wfile.write(bytes((base % (version, '', page + b'<meta http-equiv="refresh" content="1; URL=index">')), 'utf-8'))
+            del sessions[computeMD5hash(self.cookie['AToken'])]
         else:
-            succ = False
-        if succ:
-            page = desc % (
-                name, cpb, ver, dev, gamename, tid, devsite, dlink, descr, pic, options)
-        else:
-            page = messagehtml % (
-                'danger', 'Oops! Looks like you got bad link')
-        return page
+            page = base % (version, '', messagehtml % ('danger', "<center><figure class=\"figure\">"
+                                                       "<img src=\"http://share.mostmodest.ru/2017/02/H2hgPCa.png\" class=\"figure-img img-fluid rounded\" alt=\"meme\">"
+                                                       "<figcaption class=\"figure-caption\">You cant logout if you are not logged in.</figcaption>"
+                                                       "</figure></center>"))
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(bytes(page, 'utf-8'))
+        return
 
-    def api(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'application/json')
-        self.end_headers()
-        apidata = {}
-        copy = dict(plugins)
-        for item in copy:
-            if not item == 0:
-                plugin = copy[item]
-                apidata[item] = plugin
-                try:
-                    del apidata[item]["__removal_id"]
-                except Exception:
-                    pass
-                else:
-                    pass
-        self.wfile.write(bytes(dumps(apidata), 'utf-8'))
-
-    def index(self):
-        table = ""
-        isSearch = False
-        path = self.path[1:]
-        if not len(path.split("?")) == 1:
-            parsed = parseURL(self.path)
-            if 'search' in parsed:
-                query = str(parsed['search'])
-                isSearch = True
-                results = []
-                for item in plugins:
-                    if not item == 0:
-                        num = item
-                        plugin = plugins[item]
-                        plugin['id'] = num
-                        if str(plugin['TitleID']).startswith(query) or query.upper() in str(plugin['name']).upper() or query.upper() in str(getgamebytid(plugin["TitleID"])).upper():
-                            results.append(plugin)
-                for item in results:
-                    if not item["TitleID"] == "Not game":
-                        name = getgamebytid(item["TitleID"])
-                    else:
-                        name = ""
-                    table = table + links % (
-                        name,
-                        item["name"],
-                        item["compatible"],
-                        item["added"],
-                        item['plg'],
-                        item['devsite'],
-                        item['id']
-                    )
-
-        if not isSearch:
-            for item in plugins:
-                if not item == 0:
-                    idnum = item
-                    item = plugins[item]
-                    if not item["TitleID"] == "Not game":
-                        name = getgamebytid(item["TitleID"])
-                    else:
-                        name = ""
-                    if item['approved'] == True:
-                        table = table + links % (
-                            name,
-                            item["name"],
-                            item["compatible"],
-                            item["added"],
-                            item['plg'],
-                            item['devsite'],
-                            idnum
-                        )
-        page = index % (table)
-        return page
-
-
+#######################Plugin managment zone#################################
     def moderator(self):
         table = ""
         isSearch = False
@@ -343,32 +255,28 @@ class myHandler(BaseHTTPRequestHandler):
             parsed = parseURL(self.path)
             if not 'allow' in parsed:
                 if not isSearch:
-                    for item in plugins:
-                        if not item == 0:
-                            idnum = item
-                            item = plugins[item]
-                            if not item["TitleID"] == "Not game":
-                                name = getgamebytid(item["TitleID"])
-                            else:
-                                name = ""
-                            if item['approved'] is False:
-                                table = table + links_mod % (
-                                    name,
-                                    item["name"],
-                                    item["compatible"],
-                                    item["added"],
-                                    item['plg'],
-                                    item['devsite'],
-                                    idnum,
-                                    idnum,
-                                    idnum
-                                )
+                    for item in self.plugins.all():
+                        if not item["TitleID"] == "Not game":
+                            name = getgamebytid(item["TitleID"])
+                        else:
+                            name = ""
+                        if item['approved'] is False:
+                            table = table + links_mod % (
+                                name,
+                                item["name"],
+                                item["compatible"],
+                                item["added"],
+                                item['plg'],
+                                item['devsite'],
+                                item['id'],
+                                item['id'],
+                                item['id']
+                            )
                 page = mod % (table)
             else:
                 plid = int(parsed['allow'])
-                plugins[plid]['approved'] = True
-                with open('plugins.pickle', 'wb') as f:
-                    pickle.dump(plugins, f)
+                data={"id": plid, "approved": True}
+                self.plugins.update(data, ["id"])
                 page = messagehtml % ('success','Plugin was approved!')
         else:
             page = messagehtml % ('info', 'This page avaible only for admin')
@@ -400,30 +308,25 @@ class myHandler(BaseHTTPRequestHandler):
                     message = "You entered bad TitleID!"
                     badreq = True
                     succ = False
-                if plugname == "":
+                elif plugname == "":
                     message = "You havent entered plugin's name!"
                     badreq = True
                     succ = False
-                if not url(plgp) or not url(pic) or not url(devsite):
+                elif not url(plgp) or not url(pic) or not url(devsite):
                     message = "You entered bad URL!"
                     badreq = True
                     succ = False
-                for item in plugins:
-                    if not item == 0:
-                        plugin = plugins[item]
-                        if plugin['plg'] == plgp and plugin['TitleID'] == titleid and plugin['compatible'] == cpb and plugin['verion'] == ver:
-                            badreq = True
-                            succ = False
-                            message = "Plugin already exists!"
-                            break
+                if self.plugins.find_one(plg=plgp, TitleID=titleid, compatible=cpb, version= ver) != None:
+                        badreq = True
+                        succ = False
+                        message = "Plugin already exists!"
                 if not badreq:
                     now = datetime.datetime.now()
-                    plid = max(plugins) + 1
                     if cuser == 'admin@ntrdb':
                         approved = True
                     else:
                         approved = False
-                    plugins[plid] = {'TitleID': titleid,
+                    plgid = self.plugins.insert({'TitleID': titleid,
                                      'name': plugname,
                                      'developer': developer,
                                      'devsite': devsite,
@@ -434,13 +337,12 @@ class myHandler(BaseHTTPRequestHandler):
                                      'version': ver,
                                      'compatible': cpb,
                                      'pic': pic,
-                                     'approved': approved
-                                     }
-                    users[cuser][2].append(plid)
-                    with open('plugins.pickle', 'wb') as f:
-                        pickle.dump(plugins, f)
-                    with open('users.pickle', 'wb') as f:
-                        pickle.dump(users, f)
+                                     'approved': approved,
+                                     'uploader': cuser
+                                     })
+                    tmp = self.users.find_one(email=cuser)
+                    tmp = self.updPlgArr(tmp, plgid)
+                    self.users.update(tmp, ['email'])
                     message = "Your plugin were added to base. Now you need to wait for moderator to approve it."
                     succ = True
                 if succ:
@@ -455,12 +357,46 @@ class myHandler(BaseHTTPRequestHandler):
                 'danger', 'You cant add items because you are not logged in.')
         return page
 
+    def updPlgArr(self, user, newPlg):
+        arr=user['plugins']
+        arr = json.loads(arr)
+        arr.append(newPlg)
+        dmp = json.dumps(arr)
+        user['plugins'] = dmp
+        return user
+
+
+    def manage(self):
+        cuser, _ = self.checkAuth()
+        if cuser:
+            uplg = []
+            table = ''
+            user= None
+            if cuser == "admin@ntrdb":
+                plglist=self.plugins.all()
+                for item in plglist:
+                    uplg.append(item['id'])
+            else:
+                user=self.users.find_one(email=cuser)
+                plglist = json.loads(user['plugins'])
+                for item in plglist:
+                    if self.plugins.find_one(id=item):
+                        uplg.append(item)
+            for item in uplg:
+                plugin = self.plugins.find_one(id=item)
+                table = table + \
+                    links_mng % (plugin['name'], plugin['added'], item, item)
+            return managepage % table
+        else:
+            return messagehtml % ('danger', 'You cant manage your plugins because you are not logged in')
+
+
     def edit(self):
         args = parseURL(self.path)
         plid = int(args['plugid'])
         cuser = self.checkAuth()[0]
         if cuser:
-            if plid in users[cuser][2] or cuser == 'admin@ntrdb':
+            if plid in json.loads(self.users.find_one(email=cuser)['plugins']) or cuser == 'admin@ntrdb':
                 message = ""
                 if 'edit' in args:
                     plgp = args["link"]
@@ -491,17 +427,15 @@ class myHandler(BaseHTTPRequestHandler):
                         message = "You entered bad URL!"
                         badreq = True
                         succ = False
-                    for item in plugins:
-                        if not item == 0:
-                            plugin = plugins[item]
-                            if plugin['plg'] == plgp and plugin['TitleID'] == titleid and plugin['compatible'] == cpb and plugin['verion'] == ver:
-                                badreq = True
-                                succ = False
-                                message = "Plugin already exists!"
-                                break
+                    for plugin in self.plugins.all():
+                        if plugin['plg'] == plgp and plugin['TitleID'] == titleid and plugin['compatible'] == cpb and plugin['version'] == ver and plid!=plugin["id"]:
+                            badreq = True
+                            succ = False
+                            message = "Plugin already exists!"
+                            break
                     if not badreq:
                         now = datetime.datetime.now()
-                        plugins[plid] = {'TitleID': titleid,
+                        plugin = {'TitleID': titleid,
                                          'name': plugname,
                                          'developer': developer,
                                          'devsite': devsite,
@@ -511,10 +445,10 @@ class myHandler(BaseHTTPRequestHandler):
                                          'timestamp': now.timestamp(),
                                          'version': ver,
                                          'compatible': cpb,
-                                         'pic': pic
+                                         'pic': pic,
+                                         'id': plid
                                          }
-                        with open('plugins.pickle', 'wb') as f:
-                            pickle.dump(plugins, f)
+                        self.plugins.update(plugin, ["id"])
                         message = "Your plugin was edited successfully"
                         succ = True
                     if succ:
@@ -523,7 +457,7 @@ class myHandler(BaseHTTPRequestHandler):
                         message = messagehtml % ('danger', message)
                     page = message
                 else:
-                    pl = plugins[plid]
+                    pl = self.plugins.find_one(id=plid)
                     page = editpage % (
                         plid,
                         pl['name'],
@@ -540,106 +474,144 @@ class myHandler(BaseHTTPRequestHandler):
                     'danger', 'You cant add items because you are not logged in.')
         return page
 
-    def register(self, parsed):
-        if self.checkAuth()[0]:
-            page = "<META HTTP-EQUIV=\"refresh\" CONTENT=\"1; URL=index\">"
-        else:
-            if parsed == False:
-                page = reg_page
-            else:
-                pwordh = computeMD5hash(parsed['pword'])
-                mail = parsed['email']
-                del parsed  # FORGET PASSWORD
-                if email(mail):
-                    if mail in users:
-                        page = messagehtml % (
-                            'danger', "This email is already registered")
-                    else:
-                        users[mail] = [pwordh, str(uuid4())]
-                        msg = MIMEText(actmsg % (mail, users[mail][1]))
-                        msg['Subject'] = 'Confirm activation on NTRDB'
-                        msg['From'] = mailsettings.user
-                        msg['To'] = mail
-                        while 1:
-                            try:
-                                mailsrv.send_message(msg)
-                            except smtplib.SMTPException:
-                                pass
-                            else:
-                                break
-                        page = messagehtml % (
-                            'info', "You almost registered! Now please check your email for activation message from ntrdb@octonezd.pw!")
-                else:
-                    page = messagehtml % ('danger', "You entered bad email.")
-            return page
-
-    def logout(self):
-        cuser = self.checkAuth()[0]
-        if cuser:
-            self.send_response(200)
-            self.send_header('Set-Cookie', 'AToken=%s;HttpOnly;%s' %
-                             (self.cookie['AToken'], 'Expires=Wed, 21 Oct 2007 07:28:00 GMT'))
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            page = bytes(messagehtml % ('success', 'You logged out'), 'utf-8')
-            self.wfile.write(base % (version, '', page +
-                                     b'<meta http-equiv="refresh" content="1; URL=index">'))
-            del sessions[computeMD5hash(self.cookie['AToken'])]
-        else:
-            page = base % (version, '', messagehtml % ('danger', "<center><figure class=\"figure\">"
-                                                       "<img src=\"http://share.mostmodest.ru/2017/02/H2hgPCa.png\" class=\"figure-img img-fluid rounded\" alt=\"meme\">"
-                                                       "<figcaption class=\"figure-caption\">You cant logout if you are not logged in.</figcaption>"
-                                                       "</figure></center>"))
-            self.send_response(200)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            self.wfile.write(bytes(page, 'utf-8'))
-        return
-
-    def manage(self):
-        cuser, _ = self.checkAuth()
-        if cuser:
-            uplg = []
-            table = ''
-            for item in users[cuser][2]:
-                if item in plugins:
-                    uplg.append(item)
-            for item in uplg:
-                plugin = plugins[item]
-                table = table + \
-                    links_mng % (plugin['name'], plugin['added'], item, item)
-            return managepage % table
-        else:
-            return messagehtml % ('danger', 'You cant manage your plugins because you are not logged in')
 
     def rm(self):
         cuser, _ = self.checkAuth()
         args = parseURL(self.path)
         if cuser:
             plugid = int(args['plugid'])
-            if plugid in plugins:
-                if plugid in users[cuser][2] or cuser == 'admin@ntrdb':
+            if self.plugins.find_one(id=plugid)!=None:
+                if plugid in json.loads(self.users.find_one(email=cuser)['plugins']) or cuser == 'admin@ntrdb':
                     if 'sure' not in args:
+                        plugin = self.plugins.find_one(id=plugid)
                         pg = removal % (
                             plugid,
-                            plugins[plugid]['name'],
-                            plugins[plugid]['name'])
+                            plugin['name'],
+                            plugin['name'])
                         return pg
                     else:
-                        del plugins[plugid]
-                        try:
-                            users[cuser][2].pop(users[cuser][2].index(plugid))
-                        except Exception:
-                            pass
-                        with open('plugins.pickle', 'wb') as f:
-                            pickle.dump(plugins, f)
-                        with open('users.pickle', 'wb') as f:
-                            pickle.dump(users, f)
+                        plugin = self.plugins.find_one(id=plugid)
+                        user = self.users.find_one(email=plugin['uploader'])
+                        print(str(user))
+                        user['plugins'] = json.loads(user['plugins'])
+                        del user['plugins'][user['plugins'].index(plugid)]
+                        user['plugins'] = json.dumps(user['plugins'])
+                        self.users.update(user, ['email'])
+                        self.plugins.delete(id=plugid)
                         return messagehtml % ('success', 'Your plugin was removed')
                 else:
                     return messagehtml % ('danger', 'You are not the one who added this plugin!')
             else:
                 return messagehtml % ('warning', 'No plugin with that ID found.')
+
+###########################info zone##########################################
+
+    def index(self):
+        table = ""
+        isSearch = False
+        path = self.path[1:]
+        if not len(path.split("?")) == 1:
+            parsed = parseURL(self.path)
+            if 'search' in parsed:
+                query = str(parsed['search'])
+                isSearch = True
+                results = []
+                for item in self.plugins.all():
+                    plugin = item
+                    plugin['id'] = num
+                    if str(plugin['TitleID']).startswith(query) or query.upper() in str(plugin['name']).upper() or query.upper() in str(getgamebytid(plugin["TitleID"])).upper():
+                        results.append(plugin)
+                for item in results:
+                    if not item["TitleID"] == "Not game":
+                        name = getgamebytid(item["TitleID"])
+                    else:
+                        name = ""
+                    table = table + links % (
+                        name,
+                        item["name"],
+                        item["compatible"],
+                        item["added"],
+                        item['plg'],
+                        item['devsite'],
+                        item['id']
+                    )
+
+        if not isSearch:
+            for item in self.plugins.all():
+                if not item == 0:
+                    idnum = item["id"]
+                    if not item["TitleID"] == "Not game":
+                        name = getgamebytid(item["TitleID"])
+                    else:
+                        name = ""
+                    if item['approved'] == True:
+                        table = table + links % (
+                            name,
+                            item["name"],
+                            item["compatible"],
+                            item["added"],
+                            item['plg'],
+                            item['devsite'],
+                            idnum
+                        )
+        page = index % (table)
+        return page
+
+
+    def description(self):
+        parsed = parseURL(self.path)
+        if "id" in parsed:
+            gid = int(parsed["id"])
+            cuser, _ = self.checkAuth()
+            try:
+                if cuser == 'admin@ntrdb' or gid in self.users.all():
+                    options = 'Options:<a href="edit?plugid=%s" class="btn btn-secondary btn-sm">Edit</a><a href="rm?plugid=%s" class="btn btn-danger btn-sm">Remove</a>' % (
+                            parsed['id'], parsed['id'])
+                else:
+                    options = ''
+            except KeyError:
+                options = ''
+            if self.plugins.find(id=gid) != None:
+                item = self.plugins.find_one(id=gid)
+                name = str(item['name'])
+                ver = str(item['version'])
+                dev = str(item['developer'])
+                gamename = str(getgamebytid(item['TitleID']))
+                tid = str(item['TitleID'])
+                devsite = str(item['devsite'])
+                dlink = str(item['plg'])
+                descr = str(item['desc'])
+                cpb = str(item['compatible'])
+                if not str(item['pic']) == "":
+                    pic = "<p>Screenshot:</p><img src=\"%s\" class=\"screenshot\">" % (
+                        str(item['pic']))
+                else:
+                    pic = ""
+                succ = True
+        else:
+            succ = False
+        if succ:
+            page = desc % (name, cpb, ver, dev, gamename, tid, devsite, dlink, descr, pic, options)
+        else:
+            page = messagehtml % (
+                'danger', 'Oops! Looks like you got bad link')
+        return page
+
+
+    def api(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+        apidata = {}
+        copy = self.plugins.all()
+        for item in copy:
+            if item['approved']:
+                del item["uploader"]
+                del item["approved"]
+                apidata[item['id']] = item
+        self.wfile.write(bytes(json.dumps(apidata), 'utf-8'))
+
+###########################httplib zone########################################
 
     def do_GET(self):
         speccall = False
@@ -725,8 +697,6 @@ class myHandler(BaseHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
                 if scookie:
-                    # print(scookie)
-                    # print(cookie)
                     self.send_header('Set-Cookie', 'AToken=%s' % (cookie))
                 self.end_headers()
                 self.wfile.write(bytes(base % (version, "", page), 'utf-8'))

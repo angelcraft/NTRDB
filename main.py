@@ -718,6 +718,7 @@ class myHandler(BaseHTTPRequestHandler):
                 raise e
 
     def do_POST(self):
+        timer_start = time()
         self.cookie = parseCookie(dict(self.headers))
         # Doesn't do anything with posted data
         try:
@@ -733,6 +734,7 @@ class myHandler(BaseHTTPRequestHandler):
                     scookie = True
                 elif pdata['rtype'] == 'regpg':
                     page = self.register(pdata)
+                timer_stop = time()
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
                 if scookie:
@@ -740,13 +742,14 @@ class myHandler(BaseHTTPRequestHandler):
                     # print(cookie)
                     self.send_header('Set-Cookie', 'AToken=%s' % (cookie))
                 self.end_headers()
-                self.wfile.write(bytes(base % (version, "", page), 'utf-8'))
+                self.wfile.write(bytes(base % ("", page, version, str(timer_stop - timer_start)), 'utf-8'))
             else:
+                timer_stop = time()
                 self.send_response(400)
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
                 self.wfile.write(
-                    bytes(base % (version, "", messagehtml % ('danger', 'Bad request!'))), 'utf-8')
+                    bytes(base % ("", messagehtml % ('danger', 'Bad request!'), version, str(timer_stop - timer_start)), 'utf-8')
         except Exception as e:
             self.send_response(500)
             self.send_header('Content-type', 'text/html')

@@ -14,7 +14,7 @@ from html import escape
 from uuid import uuid4
 from urllib.request import urlopen
 from validators import url, email
-import mailsettings
+#import mailsettings
 import argparse
 from loader import *
 import dataset
@@ -37,7 +37,6 @@ print("Checking DB for required keys...")
 
 version = str(
     check_output('git log -n 1 --pretty=format:"%h"', shell=True), 'utf-8')
-
 sessions = {}
 
 def computeMD5hash(string):
@@ -494,7 +493,6 @@ class myHandler(BaseHTTPRequestHandler):
                     'danger', 'You cant add items because you are not logged in.')
         return page
 
-
     def rm(self):
         cuser, _ = self.checkAuth()
         args = parseURL(self.path)
@@ -749,7 +747,8 @@ try:
     if port:
         server = ThreadedHTTPServer(('', port), myHandler)
     else:
-        server = ThreadedHTTPServer(('', 8080), myHandler)
+        server = ThreadedHTTPServer(('', 4443), myHandler)
+
     print('Started httpserver')
 
     # Wait forever for incoming http requests

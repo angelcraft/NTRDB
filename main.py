@@ -82,6 +82,7 @@ with open('plugins.pickle', 'wb') as f:
 version = str(
     check_output('git log -n 1 --pretty=format:"%h"', shell=True), 'utf-8')
 print("Connecting to mail server...")
+"""
 try:
     mailsrv = smtplib.SMTP_SSL(
         host=mailsettings.smtpserver, port=mailsettings.smtpport)
@@ -92,6 +93,7 @@ except smtplib.SMTPException as e:
     print("There was an error connecting to mail server!")
     raise e
     raise SystemExit
+"""
 sessions = {}
 
 
@@ -555,7 +557,8 @@ class myHandler(BaseHTTPRequestHandler):
                         page = messagehtml % (
                             'danger', "This email is already registered")
                     else:
-                        users[mail] = [pwordh, str(uuid4())]
+                        users[mail] = [pwordh, True, []]
+                        """
                         msg = MIMEText(actmsg % (mail, users[mail][1]))
                         msg['Subject'] = 'Confirm activation on NTRDB'
                         msg['From'] = mailsettings.user
@@ -567,8 +570,11 @@ class myHandler(BaseHTTPRequestHandler):
                                 pass
                             else:
                                 break
+                        """
+                        with open('users.pickle', 'wb') as f:
+                            pickle.dump(users, f)
                         page = messagehtml % (
-                            'info', "You almost registered! Now please check your email for activation message from ntrdb@octonezd.pw!")
+                            'info', "You registered succesfully")
                 else:
                     page = messagehtml % ('danger', "You entered bad email.")
             return page
@@ -755,7 +761,8 @@ try:
     if port:
         server = ThreadedHTTPServer(('', port), myHandler)
     else:
-        server = ThreadedHTTPServer(('', 8080), myHandler)
+        server = ThreadedHTTPServer(('', 4443), myHandler)
+
     print('Started httpserver')
 
     # Wait forever for incoming http requests

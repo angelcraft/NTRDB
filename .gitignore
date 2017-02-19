@@ -144,3 +144,8 @@ read.py
 mailsettings.py
 users.pickle
 mailsettings.py
+chained.pem
+domain.key
+lets-encrypt-x3-cross-signed.pem
+signed.crt
+plugs.db

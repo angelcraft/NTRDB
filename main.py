@@ -177,6 +177,22 @@ class myHandler(BaseHTTPRequestHandler):
                 del parsed  # FORGET PASSWORD
                 if email(mail):
                     if self.users.find_one(email=mail)!=None:
+                        if not self.users.find_one(email=mail)['activate']:
+                            user=self.users.find_one(email=mail)
+                            msg = MIMEText(actmsg % (user['email'], user['uuid']))
+                            msg['Subject'] = 'Confirm activation on NTRDB'
+                            msg['From'] = mailsettings.user
+                            msg['To'] = mail
+                            while 1:
+                                try:
+                                    mailsrv.send_message(msg)
+                                except smtplib.SMTPException:
+                                    pass
+                                else:
+                                    return messagehtml % (
+                            'info', "resending the activation mail ntrdb@octonezd.pw!")
+                                    break
+
                         page = messagehtml % (
                             'danger', "This email is already registered")
                     else:
@@ -205,15 +221,16 @@ class myHandler(BaseHTTPRequestHandler):
         args = parseURL(self.path)
         if 'id' in args:
             uid = args['id']
-            for user in self.users.all():
-                if user['uuid'] == uid:
-                    page = messagehtml % (
-                        'success', 'You successfully activated account!')
-                    user['activate'] = True
-                    self.users.update(user, ['uuid'])
-                    succ = True
-                    print(str(self.users.find_one(uuid=uid)))
-                    break
+            user=self.users.find_one(uuid=uid)
+            if self.users.find_one(uuid=uid)!=None:
+                page = messagehtml % (
+                    'success', 'You successfully activated account!')
+                user['activate'] = True
+                self.users.update(user, ['uuid'])
+                succ = True
+                print(str(self.users.find_one(uuid=uid)))
+            else:
+                succ=False
         else:
             succ = False
         if succ:
@@ -538,22 +555,21 @@ class myHandler(BaseHTTPRequestHandler):
 
         if not isSearch:
             for item in self.plugins.all():
-                if not item == 0:
-                    idnum = item["id"]
-                    if not item["TitleID"] == "Not game":
-                        name = getgamebytid(item["TitleID"])
-                    else:
-                        name = ""
-                    if item['approved'] == True:
-                        table = table + links % (
-                            name,
-                            item["name"],
-                            item["compatible"],
-                            item["added"],
-                            item['plg'],
-                            item['devsite'],
-                            idnum
-                        )
+                idnum = item["id"]
+                if not item["TitleID"] == "Not game":
+                    name = getgamebytid(item["TitleID"])
+                else:
+                    name = ""
+                if item['approved'] == True:
+                    table = table + links % (
+                        name,
+                        item["name"],
+                        item["compatible"],
+                        item["added"],
+                        item['plg'],
+                        item['devsite'],
+                        idnum
+                    )
         page = index % (table)
         return page
 
@@ -720,6 +736,13 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 
     """Handle requests in a separate thread."""
 
+db = dataset.connect("sqlite:///plugs.db")
+tmp = db.get_table('Users', primary_id='uuid', primary_type='String(36)')
+if tmp.find_one(email="admin@ntrdb")==None:
+    psswd = input("Set the admins password: ")
+    h = computeMD5hash(psswd)
+    del psswd
+    tmp.insert({'uuid': "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 'email': "admin@ntrdb", 'hash' : h, 'plugins': "[]",'activate': True})
 
 try:
     if port:

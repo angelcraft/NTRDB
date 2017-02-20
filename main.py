@@ -15,6 +15,8 @@ from uuid import uuid4
 from urllib.request import urlopen
 from validators import url, email
 import mailsettings
+from time import time
+
 import argparse
 from loader import *
 import dataset
@@ -629,6 +631,7 @@ class myHandler(BaseHTTPRequestHandler):
 ###########################httplib zone########################################
 
     def do_GET(self):
+        timer_start = time()
         speccall = False
         self.cookie = parseCookie(dict(self.headers))
         # print(sessions)
@@ -679,21 +682,25 @@ class myHandler(BaseHTTPRequestHandler):
                 else:
                     page = self.index()
                 if not speccall:
+                    timer_stop = time()
                     self.send_response(200)
                     self.send_header('Content-type', 'text/html')
                     self.end_headers()
-                    page = base % (version, nbar, page)
+                    page = base % (nbar, page, version, str(timer_stop - timer_start))
                     self.wfile.write(bytes(page, 'utf-8'))
             except Exception as e:
+                timer_stop = time()
                 self.send_response(500)
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
-                page = base % (version, nbar, messagehtml %
-                               ('danger', 'Oops! An error occured when processing your request!'))
+                page = base % (nbar, messagehtml %
+                               ('danger', 'Oops! An error occured when processing your request!'),
+                               version, str(timer_stop - timer_start))
                 self.wfile.write(bytes(page, 'utf-8'))
                 raise e
 
     def do_POST(self):
+        timer_start = time()
         self.cookie = parseCookie(dict(self.headers))
         # Doesn't do anything with posted data
         try:
@@ -709,18 +716,20 @@ class myHandler(BaseHTTPRequestHandler):
                     scookie = True
                 elif pdata['rtype'] == 'regpg':
                     page = self.register(pdata)
+                timer_stop = time()
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
                 if scookie:
                     self.send_header('Set-Cookie', 'AToken=%s' % (cookie))
                 self.end_headers()
-                self.wfile.write(bytes(base % (version, "", page), 'utf-8'))
+                self.wfile.write(bytes(base % ("", page, version, str(timer_stop - timer_start)), 'utf-8'))
             else:
+                timer_stop = time()
                 self.send_response(400)
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
                 self.wfile.write(
-                    bytes(base % (version, "", messagehtml % ('danger', 'Bad request!'))), 'utf-8')
+                    bytes(base % ("", messagehtml % ('danger', 'Bad request!'), version, str(timer_stop - timer_start)), 'utf-8'))
         except Exception as e:
             self.send_response(500)
             self.send_header('Content-type', 'text/html')

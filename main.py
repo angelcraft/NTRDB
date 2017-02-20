@@ -14,7 +14,7 @@ from html import escape
 from uuid import uuid4
 from urllib.request import urlopen
 from validators import url, email
-import mailsettings
+#import mailsettings
 from time import time
 import argparse
 from loader import *
@@ -42,11 +42,13 @@ version = str(
     check_output('git log -n 1 --pretty=format:"%h"', shell=True), 'utf-8')
 sessions = {}
 
+
 def computeMD5hash(string):
     m = hashlib.sha512()
     string = str(string)
     m.update(string.encode('utf-8'))
     return m.hexdigest()
+
 
 def parsePost(string):
     tmp = string.split('&')
@@ -93,9 +95,10 @@ def getgamebytid(tid):
 
 
 class myHandler(BaseHTTPRequestHandler):
-    cdb=None
+    cdb = None
+
     def __init__(self, *args, **kwargs):
-        self.cdb=database.database()
+        self.cdb = database.database()
         super(myHandler, self).__init__(*args, **kwargs)
 
 #######################User zone#################################
@@ -130,14 +133,15 @@ class myHandler(BaseHTTPRequestHandler):
             if args is not False:
                 if 'email' in args:
                     user = self.cdb.getUser(email=args['email'])
-                    if user!=None:
+                    if user != None:
                         phash = computeMD5hash(args['pword'])
                         if user['activate']:
                             if user['hash'] == phash:
                                 page = messagehtml % (
                                     'success', "You succesfully logged in, you will redirect to main page in 5 seconds, or you can click Return To Index<META HTTP-EQUIV=\"refresh\" CONTENT=\"5; URL=index\">")
                                 cookie = str(uuid4())
-                                sessions[computeMD5hash(cookie)] = args['email']
+                                sessions[
+                                    computeMD5hash(cookie)] = args['email']
                             else:
                                 page = messagehtml % (
                                     'danger', 'You entered wrong password or email')
@@ -155,34 +159,38 @@ class myHandler(BaseHTTPRequestHandler):
         if self.checkAuth()[0]:
             return "<META HTTP-EQUIV=\"refresh\" CONTENT=\"1; URL=index\">"
         else:
-            if not  parsed:
+            if not parsed:
                 return reg_page
             else:
                 mail = parsed['email']
                 if email(mail):
-                    search=self.cdb.getUser(email=mail)
-                    if search!=None:
+                    search = self.cdb.getUser(email=mail)
+                    if search != None:
+                        """
                         if not search['activate']:
                             if self.send_mail(search["email"], search["uuid"]):
                                 return messagehtml % (
-                                            'info', "Resending the activation mail from ntrdb@octonezd.pw!")
+                                    'info', "Resending the activation mail from ntrdb@octonezd.pw!")
                             else:
                                 return messagehtml % (
-                                            "danger", "Failed to reach the mailserver. Please try again later")
+                                    "danger", "Failed to reach the mailserver. Please try again later")
                         return messagehtml % (
                             'danger', "This email is already registered")
+                        """
                     else:
                         user = self.cdb.addUser(mail, parsed['pword'])
+                        self.cdb.activateUser(uid=user['uuid'])
                         if self.send_mail(user["email"], user["uuid"]):
                             return messagehtml % (
-                                'info', "You almost registered! Now please check your email for activation message from ntrdb@octonezd.pw!")
+                                'info', "You have registered succesfully!")
                         else:
-                            return messagehtml% (
+                            return messagehtml % (
                                 "danger", "Failed to reach the mailserver. Please try again later")
                 else:
                     return messagehtml % ('danger', "You entered bad email.")
 
     def send_mail(self, mail, uid):
+        return True
         print("Connecting to mail server...")
         try:
             print("Connectin to the mail server")
@@ -216,7 +224,7 @@ class myHandler(BaseHTTPRequestHandler):
             if self.cdb.activateUser(uid=uid):
                 succ = True
             else:
-                succ=False
+                succ = False
         else:
             succ = False
         if succ:
@@ -235,13 +243,14 @@ class myHandler(BaseHTTPRequestHandler):
             self.send_header('Content-type', 'text/html')
             self.end_headers()
             page = bytes(messagehtml % ('success', 'You logged out'), 'utf-8')
-            self.wfile.write(bytes((base % (version, page + b'<meta http-equiv="refresh" content="1; URL=index">', '', str(1))), 'utf-8'))
+            self.wfile.write(bytes((base % (
+                version, page + b'<meta http-equiv="refresh" content="1; URL=index">', '', str(1))), 'utf-8'))
             del sessions[computeMD5hash(self.cookie['AToken'])]
         else:
             page = base % (version, '', messagehtml % ('danger', "<center><figure class=\"figure\">"
                                                        "<img src=\"http://share.mostmodest.ru/2017/02/H2hgPCa.png\" class=\"figure-img img-fluid rounded\" alt=\"meme\">"
                                                        "<figcaption class=\"figure-caption\">You cant logout if you are not logged in.</figcaption>"
-                                                       "</figure></center>"),'')
+                                                       "</figure></center>"), '')
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
@@ -255,7 +264,7 @@ class myHandler(BaseHTTPRequestHandler):
         path = self.path[1:]
         cuser, _ = self.checkAuth()
         luser = self.cdb.getUser(email=cuser)
-        if luser["permissions"]<=database.MOD_LEVEL:
+        if luser["permissions"] <= database.MOD_LEVEL:
             parsed = parseURL(self.path)
             if not 'allow' in parsed:
                 if not isSearch:
@@ -279,7 +288,7 @@ class myHandler(BaseHTTPRequestHandler):
             else:
                 plid = int(parsed['allow'])
                 self.cdb.allowPlugin(cuser, plid)
-                page = messagehtml % ('success','Plugin was approved!')
+                page = messagehtml % ('success', 'Plugin was approved!')
         else:
             page = messagehtml % ('info', 'This page avaible only for admin')
         return page
@@ -319,13 +328,14 @@ class myHandler(BaseHTTPRequestHandler):
                     message = "You entered bad URL!"
                     badreq = True
                     succ = False
-                if self.cdb.getCloned(plg=plgp, TitleID=titleid, compatible=cpb, version= ver):
-                        badreq = True
-                        succ = False
-                        message = "Plugin already exists!"
+                if self.cdb.getCloned(plg=plgp, TitleID=titleid, compatible=cpb, version=ver):
+                    badreq = True
+                    succ = False
+                    message = "Plugin already exists!"
                 if not badreq:
                     now = datetime.datetime.now()
-                    plugin = self.cdb.addPlugin(cuser, plugname, desc, ver, developer, titleid, devsite, plgp, cpb, pic)  
+                    plugin = self.cdb.addPlugin(
+                        cuser, plugname, desc, ver, developer, titleid, devsite, plgp, cpb, pic)
                     message = "Your plugin were added to base. Now you need to wait for moderator to approve it."
                     succ = True
                 if succ:
@@ -346,13 +356,13 @@ class myHandler(BaseHTTPRequestHandler):
         if cuser:
             uplg = []
             table = ''
-            user= None
-            if luser['permissions']<=database.ADMIN_LEVEL:
-                plglist=self.cdb.getAllPlugins()
+            user = None
+            if luser['permissions'] <= database.ADMIN_LEVEL:
+                plglist = self.cdb.getAllPlugins()
                 for item in plglist:
                     uplg.append(item['id'])
             else:
-                user=self.cdb.getUser(email=cuser)
+                user = self.cdb.getUser(email=cuser)
                 for item in user['plugins']:
                     if self.cdb.getPlugin(pid=item):
                         uplg.append(item)
@@ -364,14 +374,13 @@ class myHandler(BaseHTTPRequestHandler):
         else:
             return messagehtml % ('danger', 'You cant manage your plugins because you are not logged in')
 
-
     def edit(self):
         args = parseURL(self.path)
         plid = int(args['plugid'])
         cuser = self.checkAuth()[0]
         luser = self.cdb.getUser(email=cuser)
         if cuser:
-            if plid in luser['plugins'] or luser['permissions']<=database.ADMIN_LEVEL:
+            if plid in luser['plugins'] or luser['permissions'] <= database.ADMIN_LEVEL:
                 message = ""
                 if 'edit' in args:
                     plgp = args["link"]
@@ -402,25 +411,26 @@ class myHandler(BaseHTTPRequestHandler):
                         message = "You entered bad URL!"
                         badreq = True
                         succ = False
-                    cl = self.cdb.getCloned(plg=plgp, TitleID=titleid, compatible=cpb, version= ver)
-                    if cl and cl["id"]!=plid:
+                    cl = self.cdb.getCloned(
+                        plg=plgp, TitleID=titleid, compatible=cpb, version=ver)
+                    if cl and cl["id"] != plid:
                         badreq = True
                         succ = False
                         message = "Plugin already exists!"
                     if not badreq:
                         now = datetime.datetime.now()
                         plugin = {'TitleID': titleid,
-                                         'name': plugname,
-                                         'developer': developer,
-                                         'devsite': devsite,
-                                         'desc': desc,
-                                         'plg': plgp,
-                                         'version': ver,
-                                         'compatible': cpb,
-                                         'pic': pic,
-                                         'pid': plid,
-                                         'user': cuser
-                                         }
+                                  'name': plugname,
+                                  'developer': developer,
+                                  'devsite': devsite,
+                                  'desc': desc,
+                                  'plg': plgp,
+                                  'version': ver,
+                                  'compatible': cpb,
+                                  'pic': pic,
+                                  'pid': plid,
+                                  'user': cuser
+                                  }
                         self.cdb.updatePlugin(**plugin)
                         message = "Your plugin was edited successfully"
                         succ = True
@@ -444,7 +454,7 @@ class myHandler(BaseHTTPRequestHandler):
                     )
             else:
                 page = messagehtml % (
-                        'danger', 'You do not have permissions to edit this plugin.')
+                    'danger', 'You do not have permissions to edit this plugin.')
         else:
             page = messagehtml % (
                 'danger', 'You cant add items because you are not logged in.')
@@ -456,9 +466,9 @@ class myHandler(BaseHTTPRequestHandler):
         luser = self.cdb.getUser(email=cuser)
         if cuser:
             plugid = int(args['plugid'])
-            plugin=self.cdb.getPlugin(pid=plugid)
-            if plugin!=None:
-                if plugin['uploader']==luser['email'] or luser["permissions"] <= database.ADMIN_LEVEL:
+            plugin = self.cdb.getPlugin(pid=plugid)
+            if plugin != None:
+                if plugin['uploader'] == luser['email'] or luser["permissions"] <= database.ADMIN_LEVEL:
                     if 'sure' not in args:
                         plugin = self.cdb.getPlugin(pid=plugid)
                         pg = removal % (
@@ -500,10 +510,9 @@ class myHandler(BaseHTTPRequestHandler):
                 item['plg'],
                 item['devsite'],
                 item['id']
-                )
+            )
         page = index % (table)
         return page
-
 
     def description(self):
         parsed = parseURL(self.path)
@@ -512,9 +521,9 @@ class myHandler(BaseHTTPRequestHandler):
             cuser, _ = self.checkAuth()
             luser = self.cdb.getUser(email=cuser)
             try:
-                if luser["permissions"]<=database.ADMIN_LEVEL or gid in luser["plugins"]:
+                if luser["permissions"] <= database.ADMIN_LEVEL or gid in luser["plugins"]:
                     options = 'Options:<a href="edit?plugid=%s" class="btn btn-secondary btn-sm">Edit</a><a href="rm?plugid=%s" class="btn btn-danger btn-sm">Remove</a>' % (
-                            parsed['id'], parsed['id'])
+                        parsed['id'], parsed['id'])
                 else:
                     options = ''
             except KeyError:
@@ -541,12 +550,12 @@ class myHandler(BaseHTTPRequestHandler):
         else:
             succ = False
         if succ:
-            page = desc % (name, cpb, ver, dev, gamename, tid, devsite, dlink, descr, pic, options)
+            page = desc % (
+                name, cpb, ver, dev, gamename, tid, devsite, dlink, descr, pic, options)
         else:
             page = messagehtml % (
                 'danger', 'Oops! Looks like you got bad link')
         return page
-
 
     def api(self):
         self.send_response(200)
@@ -570,8 +579,9 @@ class myHandler(BaseHTTPRequestHandler):
         cuser, rcookies = self.checkAuth()
         luser = self.cdb.getUser(email=cuser)
         if cuser:
-            if luser["permissions"]<=database.MOD_LEVEL:
-                nbar = nbar_loggedin % (cuser, '<a class="dropdown-item" href="mod">Moderation</a>')
+            if luser["permissions"] <= database.MOD_LEVEL:
+                nbar = nbar_loggedin % (
+                    cuser, '<a class="dropdown-item" href="mod">Moderation</a>')
             else:
                 nbar = nbar_loggedin % (cuser, '')
         else:
@@ -630,7 +640,8 @@ class myHandler(BaseHTTPRequestHandler):
                     self.send_response(200)
                     self.send_header('Content-type', 'text/html')
                     self.end_headers()
-                    page = base % (nbar, page, version, str(timer_stop - timer_start))
+                    page = base % (
+                        nbar, page, version, str(timer_stop - timer_start))
                     self.wfile.write(bytes(page, 'utf-8'))
             except Exception as e:
                 timer_stop = time()
@@ -638,7 +649,8 @@ class myHandler(BaseHTTPRequestHandler):
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
                 page = base % (nbar, messagehtml %
-                               ('danger', 'Oops! An error occured when processing your request!'),
+                               ('danger',
+                                'Oops! An error occured when processing your request!'),
                                version, str(timer_stop - timer_start))
                 self.wfile.write(bytes(page, 'utf-8'))
                 raise e
@@ -666,7 +678,8 @@ class myHandler(BaseHTTPRequestHandler):
                 if scookie:
                     self.send_header('Set-Cookie', 'AToken=%s' % (cookie))
                 self.end_headers()
-                self.wfile.write(bytes(base % ("", page, version, str(timer_stop - timer_start)), 'utf-8'))
+                self.wfile.write(
+                    bytes(base % ("", page, version, str(timer_stop - timer_start)), 'utf-8'))
             else:
                 timer_stop = time()
                 self.send_response(400)
@@ -679,7 +692,7 @@ class myHandler(BaseHTTPRequestHandler):
             self.send_header('Content-type', 'text/html')
             self.end_headers()
             page = base % (version, messagehtml %
-                           ('danger', 'Oops! An error occured when processing your request!'), "", "Error" )
+                           ('danger', 'Oops! An error occured when processing your request!'), "", "Error")
             self.wfile.write(bytes(page, 'utf-8'))
             raise e
 
@@ -689,12 +702,12 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in a separate thread."""
 
 db = database.database()
-count=0
+count = 0
 for i in db.getAllPermissionUsers(database.OWNER_LEVEL):
-    count+=1
-if count==0:
+    count += 1
+if count == 0:
     email = input("Owner email: ")
-    passwd= input("Owner Password: ")
+    passwd = input("Owner Password: ")
     db.createOwner(email, passwd)
     del email
     del passwd

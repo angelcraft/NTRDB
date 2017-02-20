@@ -1,7 +1,7 @@
 import dataset
 import json
 import datetime
-from custom_exeption import MissingPermission, SQLExeption
+from custom_exception import MissingPermission, SQLException
 import hashlib
 from uuid import uuid4
 
@@ -24,7 +24,7 @@ USER_INFO={'uuid':False,
            'email':True,
            'hash':True,
            'plugins':True,
-           'activate':True,
+           'activate':False,
            'permissions':False}
 
 OWNER_LEVEL= 0
@@ -70,14 +70,20 @@ class database():
             plugin = self.getPlugin(pid=newid)
             return plugin
         else:
-            raise SQLExeption
+            raise SQLException
 
     def allowPlugin(self, user, pid):
         user= self.getUser(email=user)
-        if user["permissions"]<=MOD_LEVEL:
-            plugin = self.getPlugin(pid=pid)
-            plugin["approved"]=True
-            self.plugins.update(plugin, ['id'])
+        if user!=None:    
+            if user["permissions"]<=MOD_LEVEL:
+                plugin = self.getPlugin(pid=pid)
+                if plugin != None:
+                    plugin["approved"]=True
+                    self.plugins.update(plugin, ['id'])
+                else:
+                    raise SQLException("Not Found ID")
+        else:
+            raise BadUser("User Not Found")
 
     def updatePlugin(self, user, pid, **kwargs):
         """Update a plugin. Checks the Array to make sure the field is available to modify
@@ -91,32 +97,44 @@ class database():
             if all of the kwargs are in the array it will update and return the updated plugin
         """
         user = self.getUser(user)
-        plugin = self.getPlugin(pid=pid)
-        if plugin!=None:
-            if user["permissions"]<=ADMIN_LEVEL or plugin['id'] in user['plugins']:
-                for i in kwargs.keys():
-                    if PLUGIN_INFO[i]:
-                        plugin[i]=kwargs[i]
-                    else:
-                        return False
-                self.plugins.update(plugin, ['id'])
-                return plugin
+        if user!=None:
+            plugin = self.getPlugin(pid=pid)
+            if plugin!=None:
+                if user["permissions"]<=ADMIN_LEVEL or plugin['uploader']==user['email']:
+                    for i in kwargs.keys():
+                        try:
+                            if PLUGIN_INFO[i]:
+                                plugin[i]=kwargs[i]
+                            else:
+                                pass
+                        except KeyError:
+                            return False
+                    self.serPlugin(plugin)
+                    return plugin
+                else:
+                    raise MissingPermission("Missing Permissions")
             else:
-                raise MissingPermission("Missing Permissions")
+                raise SQLException("Not Found ID")
         else:
-            raise SQLExeption("Not Found ID")
+            raise BadUser("User Not Found")
 
     def transferPluginOwner(self, user, pid, newUser):
         admin = self.getUser(email=user)
         if admin!=None:
             if admin["permission"] <= ADMIN_LEVEL:
-                user = self.getUser(email=newUser)
+                newOwner = self.getUser(email=newUser)
                 plugin = self.getPlugin(pid=pid)
-                previousOwner= self.users.find_one(plugin['uploader'])
+                previousOwner= self.getUser(plugin['uploader'])
+                del previousOwner['plugins'][previousOwner['plugins'].index(plugin[id])]
+                newOwner['plugins'].append(pid)
+                plugin['uploader'] = newOwner['email']
+                self.setPlugin(plugin)
+                self.setUser(newOwner)
+                self.setUser(previousOwner)
             else:
                 raise MissingPermission("Missing Permissions")
         else:
-            raise SQLExeption("Not Found ID")
+            raise SQLException("Not Found ID")
 
     def removePlugin(self, user, pid):
         admin = self.getUser(user)
@@ -126,12 +144,12 @@ class database():
                 user=self.getUser(email=plugin["uploader"])
                 del user["plugins"][user["plugins"].index(pid)]
                 self.setUser(user)
-                self.plugins.delete(plugin, ['id'])
+                self.plugins.delete(id=pid)
                 return True
             else:
                 raise MissingPermission("Missing Permissions")
         else:
-            raise SQLExeption("Not Found ID")
+            raise SQLException("Not Found ID")
 
 
 #######################################USER##########################################
@@ -153,24 +171,26 @@ class database():
         self.users.insert(user)
         return user
 
-    def updateUser(self, user,**kwargs):
-        user=self.getUser(email=user)
-        for i in kwargs.keys():
-            if i in USER_INFO:
-                if i=="hash":
-                    phash = str(computeMD5hash(kwargs[i]))
-                    del kwargs[i]
-                    user[i] = phash
-                elif i=="plugins":
-                    dmp = json.dumps(kwargs[i])
-                    user[i] = dmp
+    def updateUser(self, loged, tomod,**kwargs):
+        loged=self.getUser(email=loged)
+        user=sef.getUser(email=tomod)
+        if loged['email']==user['email']:
+            for i in kwargs.keys():
+                if i in USER_INFO:
+                    if i=="hash":
+                        phash = str(computeMD5hash(kwargs[i]))
+                        del kwargs[i]
+                        user[i] = phash
+                    else:
+                        user[i] = kwargs[i]
                 else:
-                    user[i] = kwargs[i]
-            else:
-                return False
+                    return False
+        else:
+            return False
         self.setUser(user)
+        return True
 
-    def deleteuser(self, user, todel):
+    def deleteUser(self, user, todel):
         admin=self.getUser(user)
         todel=self.getUser(todel)
         if admin['permissions']<=ADMIN_LEVEL or admin[uuid]==todel[uuid]:
@@ -202,6 +222,16 @@ class database():
                 self.setUser(upg)
         else:
             return False
+
+    def activateUser(self, uid):
+        user = self.getUserUuid(uuid=uid)
+        if user!=None:
+            user["activate"] = True
+            self.setUser(user)
+            return True
+        else:
+            return False
+
 
 ######################################specific Getters and setters#####################################
 #-----------------------------Users------------------------------------#
@@ -256,7 +286,14 @@ class database():
         return self.plugins.find(approved=False)
 
     def getCloned(self, **kwargs):
-        return self.plugins.find_one(**kwargs)
+        cld = self.plugins.find_one(**kwargs)
+        if cld!=None:
+            return cld
+        else:
+            return False
 
     def getApproved(self):
         return self.plugins.find(approved=True)
+
+    def setPlugin(self, plugin):
+        self.plugins.update(plugin, ['id'])

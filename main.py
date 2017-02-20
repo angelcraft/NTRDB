@@ -19,7 +19,7 @@ from time import time
 import argparse
 from loader import *
 import dataset
-from custom_exeption import MissingPermission, SQLExeption
+from custom_exception import MissingPermission, SQLException
 import database
 
 parser = argparse.ArgumentParser()
@@ -130,7 +130,6 @@ class myHandler(BaseHTTPRequestHandler):
             if args is not False:
                 if 'email' in args:
                     user = self.cdb.getUser(email=args['email'])
-                    print(user)
                     if user!=None:
                         phash = computeMD5hash(args['pword'])
                         if user['activate']:
@@ -164,12 +163,12 @@ class myHandler(BaseHTTPRequestHandler):
                     search=self.cdb.getUser(email=mail)
                     if search!=None:
                         if not search['activate']:
-                            if self.send_mail(user["email"], user["uuid"]):
+                            if self.send_mail(search["email"], search["uuid"]):
                                 return messagehtml % (
-                                            'info', "Resending the activation mail ntrdb@octonezd.pw!")
+                                            'info', "Resending the activation mail from ntrdb@octonezd.pw!")
                             else:
                                 return messagehtml % (
-                                            "danger", "failed to reach the mailserver. Please try again later")
+                                            "danger", "Failed to reach the mailserver. Please try again later")
                         return messagehtml % (
                             'danger', "This email is already registered")
                     else:
@@ -179,7 +178,7 @@ class myHandler(BaseHTTPRequestHandler):
                                 'info', "You almost registered! Now please check your email for activation message from ntrdb@octonezd.pw!")
                         else:
                             return messagehtml% (
-                                "danger", "failed to reach the mailserver. Please try again later")
+                                "danger", "Failed to reach the mailserver. Please try again later")
                 else:
                     return messagehtml % ('danger', "You entered bad email.")
 
@@ -214,12 +213,7 @@ class myHandler(BaseHTTPRequestHandler):
         args = parseURL(self.path)
         if 'id' in args:
             uid = args['id']
-            user=self.cdb.getUserUuid(uuid=uid)
-            if user!=None:
-                page = messagehtml % (
-                    'success', 'You successfully activated account!')
-                user['activate'] = True
-                self.cdb.setUser(user)
+            if self.cdb.activateUser(uid=uid):
                 succ = True
             else:
                 succ=False
@@ -247,7 +241,7 @@ class myHandler(BaseHTTPRequestHandler):
             page = base % (version, '', messagehtml % ('danger', "<center><figure class=\"figure\">"
                                                        "<img src=\"http://share.mostmodest.ru/2017/02/H2hgPCa.png\" class=\"figure-img img-fluid rounded\" alt=\"meme\">"
                                                        "<figcaption class=\"figure-caption\">You cant logout if you are not logged in.</figcaption>"
-                                                       "</figure></center>"))
+                                                       "</figure></center>"),'')
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
@@ -325,16 +319,12 @@ class myHandler(BaseHTTPRequestHandler):
                     message = "You entered bad URL!"
                     badreq = True
                     succ = False
-                if self.cdb.getCloned(plg=plgp, TitleID=titleid, compatible=cpb, version= ver) != None:
+                if self.cdb.getCloned(plg=plgp, TitleID=titleid, compatible=cpb, version= ver):
                         badreq = True
                         succ = False
                         message = "Plugin already exists!"
                 if not badreq:
                     now = datetime.datetime.now()
-                    if luser["permissions"]<=database.MOD_LEVEL:
-                        approved = True
-                    else:
-                        approved = False
                     plugin = self.cdb.addPlugin(cuser, plugname, desc, ver, developer, titleid, devsite, plgp, cpb, pic)  
                     message = "Your plugin were added to base. Now you need to wait for moderator to approve it."
                     succ = True
@@ -349,15 +339,6 @@ class myHandler(BaseHTTPRequestHandler):
             page = messagehtml % (
                 'danger', 'You cant add items because you are not logged in.')
         return page
-
-    def updPlgArr(self, user, newPlg):
-        arr=user['plugins']
-        arr = json.loads(arr)
-        arr.append(newPlg)
-        dmp = json.dumps(arr)
-        user['plugins'] = dmp
-        return user
-
 
     def manage(self):
         cuser, _ = self.checkAuth()
@@ -422,11 +403,10 @@ class myHandler(BaseHTTPRequestHandler):
                         badreq = True
                         succ = False
                     cl = self.cdb.getCloned(plg=plgp, TitleID=titleid, compatible=cpb, version= ver)
-                    if cl != None and cl["id"]!=plid:
+                    if cl and cl["id"]!=plid:
                         badreq = True
                         succ = False
                         message = "Plugin already exists!"
-                        
                     if not badreq:
                         now = datetime.datetime.now()
                         plugin = {'TitleID': titleid,
@@ -464,7 +444,7 @@ class myHandler(BaseHTTPRequestHandler):
                     )
             else:
                 page = messagehtml % (
-                        'danger', 'You do not have permissions for this.')
+                        'danger', 'You do not have permissions to edit this plugin.')
         else:
             page = messagehtml % (
                 'danger', 'You cant add items because you are not logged in.')
@@ -476,8 +456,9 @@ class myHandler(BaseHTTPRequestHandler):
         luser = self.cdb.getUser(email=cuser)
         if cuser:
             plugid = int(args['plugid'])
-            if self.cdb.getPlugin(pid=plugid)!=None:
-                if plugid in luser['plugins'] or luser["permissions"] <= database.ADMIN_LEVEL:
+            plugin=self.cdb.getPlugin(pid=plugid)
+            if plugin!=None:
+                if plugin['uploader']==luser['email'] or luser["permissions"] <= database.ADMIN_LEVEL:
                     if 'sure' not in args:
                         plugin = self.cdb.getPlugin(pid=plugid)
                         pg = removal % (
@@ -489,7 +470,7 @@ class myHandler(BaseHTTPRequestHandler):
                         self.cdb.removePlugin(user=cuser, pid=plugid)
                         return messagehtml % ('success', 'Your plugin was removed')
                 else:
-                    return messagehtml % ('danger', 'You are not the one who added this plugin!')
+                    return messagehtml % ('danger', 'You dont have the permissions to delete this Plugin')
             else:
                 return messagehtml % ('warning', 'No plugin with that ID found.')
 
@@ -499,45 +480,26 @@ class myHandler(BaseHTTPRequestHandler):
         table = ""
         isSearch = False
         path = self.path[1:]
-        if not len(path.split("?")) == 1:
-            parsed = parseURL(self.path)
-            if 'search' in parsed:
-                query = str(parsed['search'])
-                isSearch = True
-                results = []
-                for plugin in self.cdb.getApproved():
-                    if str(plugin['TitleID']).startswith(query) or query.upper() in str(plugin['name']).upper() or query.upper() in str(getgamebytid(plugin["TitleID"])).upper():
-                        results.append(plugin)
-                for item in results:
-                    if not item["TitleID"] == "Not game":
-                        name = getgamebytid(item["TitleID"])
-                    else:
-                        name = ""
-                    table = table + links % (
-                        name,
-                        item["name"],
-                        item["compatible"],
-                        item["added"],
-                        item['plg'],
-                        item['devsite'],
-                        item['id']
-                    )
-
-        if not isSearch:
-            for item in self.cdb.getApproved():
-                idnum = item["id"]
-                if not item["TitleID"] == "Not game":
-                    name = getgamebytid(item["TitleID"])
-                else:
-                    name = ""
-                table = table + links % (
-                    name,
-                    item["name"],
-                    item["compatible"],
-                    item["added"],
-                    item['plg'],
-                    item['devsite'],
-                    idnum
+        parsed = parseURL(self.path)
+        for item in self.cdb.getApproved():
+            if not item["TitleID"] == "Not game":
+                name = getgamebytid(item["TitleID"])
+            else:
+                name = ""
+            if item['compatible'] == 'universal':
+                cpbicon = iany
+            elif item['compatible'] == 'n3ds':
+                cpbicon = inew
+            elif item['compatible'] == 'o3ds':
+                cpbicon = iold
+            table = table + links % (
+                cpbicon,
+                name,
+                item["name"],
+                item["added"],
+                item['plg'],
+                item['devsite'],
+                item['id']
                 )
         page = index % (table)
         return page
@@ -550,12 +512,14 @@ class myHandler(BaseHTTPRequestHandler):
             cuser, _ = self.checkAuth()
             luser = self.cdb.getUser(email=cuser)
             try:
-                if luser["permissions"]<=database.ADMIN_LEVEL or gid in self.luser["plugins"]:
+                if luser["permissions"]<=database.ADMIN_LEVEL or gid in luser["plugins"]:
                     options = 'Options:<a href="edit?plugid=%s" class="btn btn-secondary btn-sm">Edit</a><a href="rm?plugid=%s" class="btn btn-danger btn-sm">Remove</a>' % (
                             parsed['id'], parsed['id'])
                 else:
                     options = ''
             except KeyError:
+                options = ''
+            except TypeError:
                 options = ''
             if self.cdb.getPlugin(pid=gid) != None:
                 item = self.cdb.getPlugin(pid=gid)

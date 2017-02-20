@@ -18,7 +18,7 @@ for i in dict(users).keys():
     phash=users[i][0]
     activate=users[i][1]
     plugins=json.dumps(users[i][2])
-    newUser={'uuid': uuid, 'email': email, 'hash': phash, 'plugins': plugins, "activate": activate}
+    newUser={'uuid': uuid, 'email': email, 'hash': phash, 'plugins': plugins, "activate": activate, "permissions": 3}
     if usersdb.find_one(email=email)==None:
       usersdb.insert(newUser)
 

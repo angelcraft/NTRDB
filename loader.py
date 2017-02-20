@@ -1,3 +1,4 @@
+from base64 import b64encode
 with open('resources/favicon.png', 'rb') as f:
     icon = f.read()
 with open('html/index.html') as f:
@@ -34,4 +35,10 @@ with open('html/links_mod.html') as f:
     links_mod = f.read()
 with open('html/mod.html') as f:
     mod = f.read()
+with open('resources/Icon_Any.png', 'rb') as f:
+    iany = str(b64encode(f.read()), 'utf-8')
+with open('resources/Icon_New.png', 'rb') as f:
+    inew = str(b64encode(f.read()), 'utf-8')
+with open('resources/Icon_Old.png', 'rb') as f:
+    iold = str(b64encode(f.read()), 'utf-8')
 print("Pages loaded")

@@ -284,54 +284,29 @@ class myHandler(BaseHTTPRequestHandler):
 
     def index(self):
         table = ""
-        isSearch = False
-        path = self.path[1:]
-        if not len(path.split("?")) == 1:
-            parsed = parseURL(self.path)
-            if 'search' in parsed:
-                query = str(parsed['search'])
-                isSearch = True
-                results = []
-                for item in plugins:
-                    if not item == 0:
-                        num = item
-                        plugin = plugins[item]
-                        plugin['id'] = num
-                        if str(plugin['TitleID']).startswith(query) or query.upper() in str(plugin['name']).upper() or query.upper() in str(getgamebytid(plugin["TitleID"])).upper():
-                            results.append(plugin)
-                for item in results:
-                    if not item["TitleID"] == "Not game":
-                        name = getgamebytid(item["TitleID"])
-                    else:
-                        name = ""
+        for item in plugins:
+            if not item == 0:
+                idnum = item
+                item = plugins[item]
+                if not item["TitleID"] == "Not game":
+                    name = getgamebytid(item["TitleID"])
+                else:
+                    name = ""
+                if item['approved'] == True:
+                    if item['compatible'] == 'universal':
+                        cpbicon = iany
+                    elif item['compatible'] == 'n3ds':
+                        cpbicon = inew
+                    elif item['compatible'] == 'o3ds':
+                        cpbicon = iold
                     table = table + links % (
+                        cpbicon,
                         name,
                         item["name"],
-                        item["compatible"],
                         item["added"],
                         item['plg'],
                         item['devsite'],
-                        item['id']
-                    )
-
-        if not isSearch:
-            for item in plugins:
-                if not item == 0:
-                    idnum = item
-                    item = plugins[item]
-                    if not item["TitleID"] == "Not game":
-                        name = getgamebytid(item["TitleID"])
-                    else:
-                        name = ""
-                    if item['approved'] == True:
-                        table = table + links % (
-                            name,
-                            item["name"],
-                            item["compatible"],
-                            item["added"],
-                            item['plg'],
-                            item['devsite'],
-                            idnum
+                        idnum
                         )
         page = index % (table)
         return page

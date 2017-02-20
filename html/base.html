@@ -55,10 +55,6 @@
                   $('#plugins').DataTable();
               } );
             </script>
-            <!--
-            <input type="submit" onclick="document.getElementById('theme_css').href = '../light.css';"value="Light Theme" id="SwitchToLight">
-            <input type="submit" onclick="document.getElementById('theme_css').href = '../dark.css';" value="Dark Theme" id="SwitchToDark">
-            -->
             <nav class="navbar navbar-toggleable-md navbar-inverse bg-primary" id='TopBar'>
               <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -69,6 +65,14 @@
               </a>
               <div class="collapse navbar-collapse" id="navbarsExampleDefault">
                 <ul class="navbar-nav mr-auto">
+                  <!--
+                  <li class="nav-item dropdown">
+                  <a class="nav-link dropdown-toggle" href="#" id="dropdown02" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Theme</a>
+                  <div class="dropdown-menu" aria-labelledby="dropdown02">
+                  <a class="dropdown-item" href="#" onclick="document.getElementById('theme_css').href = '../light.css';">Light theme</a>
+                  <a class="dropdown-item" href="#" onclick="document.getElementById('theme_css').href = '../dark.css';">Dark Theme</a>
+                  </li>
+                  -->
                   %s
                 </ul>
               </div>

@@ -41,4 +41,8 @@ with open('resources/Icon_New.png', 'rb') as f:
     inew = str(b64encode(f.read()), 'utf-8')
 with open('resources/Icon_Old.png', 'rb') as f:
     iold = str(b64encode(f.read()), 'utf-8')
+with open('html/light.css', 'rb') as f:
+    lighttheme = f.read()
+with open('html/dark.css', 'rb') as f:
+    darktheme = f.read()
 print("Pages loaded")

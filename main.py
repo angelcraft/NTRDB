@@ -668,6 +668,18 @@ class myHandler(BaseHTTPRequestHandler):
                     self.send_header('Content-type', 'image/png')
                     self.end_headers()
                     self.wfile.write(icon)
+                elif self.path.startswith('/light.css'):
+                    speccall = True
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/css')
+                    self.end_headers()
+                    self.wfile.write(lighttheme)
+                elif self.path.startswith('/dark.css'):
+                    speccall = True
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/css')
+                    self.end_headers()
+                    self.wfile.write(darktheme)
                 elif self.path.startswith('/error'):
                     1 / 0
                 elif self.path.startswith('/rm'):

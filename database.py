@@ -109,7 +109,7 @@ class database():
                                 pass
                         except KeyError:
                             return False
-                    self.serPlugin(plugin)
+                    self.setPlugin(plugin)
                     return plugin
                 else:
                     raise MissingPermission("Missing Permissions")

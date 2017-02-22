@@ -561,11 +561,11 @@ class myHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
-        apidata = {}
+        apidata = []
         for item in self.cdb.getApproved():
             del item["uploader"]
             del item["approved"]
-            apidata[item['id']] = item
+            apidata.append(item)
         self.wfile.write(bytes(json.dumps(apidata), 'utf-8'))
 
 ###########################httplib zone########################################

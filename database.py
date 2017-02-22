@@ -201,24 +201,24 @@ class database():
         else:
             raise MissingPermission("Missing Permissions")
 
-    def upgradePremis(self, user, upd, newPermissions):
+    def upgradePermis(self, user, upd, newPermissions):
         admin=self.getUser(email=user)
         if newPermissions<OWNER_LEVEL:
             return False
         if admin['permissions'] <= OWNER_LEVEL:
-            upg = self.getUser(email=udp)
+            upg = self.getUser(email=upd)
             if upg!=None:
-                upg['permissions']== newPermissions
+                upg['permissions'] = newPermissions
                 self.setUser(upg)
                 return True
             else:
                 return False
         elif admin["permissions"] <= ADMIN_LEVEL:
-            if newPermissions<=MOD_LEVEL:
+            if newPermissions<=ADMIN_LEVEL:
                 return False
             else:
-                upg= self.getUser(email=udp)
-                upg["permissions"] == newPermissions
+                upg= self.getUser(email=upd)
+                upg["permissions"] = newPermissions
                 self.setUser(upg)
         else:
             return False

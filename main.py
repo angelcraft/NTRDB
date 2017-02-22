@@ -257,6 +257,52 @@ class myHandler(BaseHTTPRequestHandler):
             self.wfile.write(bytes(page, 'utf-8'))
         return
 
+    def adminmenu(self):
+        table = ''
+        cuser = self.checkAuth()[0]
+        path = self.path[1:]
+        if cuser:
+            luser = self.cdb.getUser(email=cuser)
+            if luser != None:
+                parsed = parseURL(self.path)
+                try:
+                    if not parsed:
+                        if luser['permissions'] == database.OWNER_LEVEL:
+                            for i in self.cdb.getAllUsers():
+                                table = table + links_adminmenu % (
+                                    i['email'],
+                                    i['permissions'],
+                                    "<a href='adminmenu?user=%s' class='btn btn-info btn-sm'>User</a>" % (i['email']),
+                                    "<a href='adminmenu?moder=%s' class='btn btn-info btn-sm'>Moderator</a>" % (i['email']),
+                                    "<a href='adminmenu?admin=%s' class='btn btn-info btn-sm'>Administrator</a>" % (i['email'])
+                                )
+                            page = adminmenu % (table)
+                        elif luser['permissions'] == database.ADMIN_LEVEL:
+                                for i in self.cdb.getAllUsers():
+                                    if i['permissions']>=database.MOD_LEVEL:
+                                        table = table + links_adminmenu % (
+                                            i['email'],
+                                            i['permissions'],
+                                            "<a href='adminmenu?user=%s' class='btn btn-info btn-sm'>User</a>" % (i['email']),
+                                            "<a href='adminmenu?moder=%s' class='btn btn-info btn-sm'>Moderator</a>" % (i['email']),
+                                            ""
+                                        )
+                                page = adminmenu % (table)
+                    elif 'user' in parsed:
+                        self.cdb.upgradePermis(cuser, parsed['user'], database.USER_LEVEL)
+                        page = messagehtml % ('success', 'User '+ parsed['user']+' is now user')
+                    elif 'moder' in parsed:
+                        self.cdb.upgradePermis(cuser, parsed['moder'], database.MOD_LEVEL)
+                        page = messagehtml % ('success', 'User '+ parsed['moder']+' is now Moderator')
+                    elif 'admin' in parsed:
+                        self.cdb.upgradePermis(cuser, parsed['admin'], database.ADMIN_LEVEL)
+                        page = messagehtml % ('success', 'User '+ parsed['admin']+' is now Administrator')
+
+                except MissingPermission as e:
+                    raise e
+                return page
+
+
 #######################Plugin managment zone#################################
     def moderator(self):
         table = ""
@@ -364,10 +410,10 @@ class myHandler(BaseHTTPRequestHandler):
             else:
                 user = self.cdb.getUser(email=cuser)
                 for item in user['plugins']:
-                    if self.cdb.getPlugin(pid=item):
-                        uplg.append(item)
-            for item in uplg:
-                plugin = self.cdb.getPlugin(pid=item)
+                    plug = self.cdb.getPlugin(pid=item)
+                    if plug:
+                        uplg.append(plug)
+            for plugin in uplg:
                 table = table + \
                     links_mng % (plugin['name'], plugin['added'], item, item)
             return managepage % table
@@ -579,11 +625,13 @@ class myHandler(BaseHTTPRequestHandler):
         cuser, rcookies = self.checkAuth()
         luser = self.cdb.getUser(email=cuser)
         if cuser:
-            if luser["permissions"] <= database.MOD_LEVEL:
+            if luser["permissions"] <= database.ADMIN_LEVEL:
                 nbar = nbar_loggedin % (
-                    cuser, '<a class="dropdown-item" href="mod">Moderation</a>')
+                    cuser, '<a class="dropdown-item" href="mod">Moderation</a>', '<a class="dropdown-item" href="adminmenu">Administration</a>')
+            elif luser["permissions"] <= database.MOD_LEVEL:
+                nbar = nbar_loggedin % (cuser, '<a class="dropdown-item" href="mod">Moderation</a>', '')
             else:
-                nbar = nbar_loggedin % (cuser, '')
+                nbar = nbar_loggedin % (cuser, '', '')
         else:
             nbar = nbar_login
         if not rcookies:
@@ -630,9 +678,11 @@ class myHandler(BaseHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(darktheme)
                 elif self.path.startswith('/error'):
-                    1 / 0
+                    1 / 0 #LIKE
                 elif self.path.startswith('/rm'):
                     page = self.rm()
+                elif self.path.startswith('/adminmenu'):
+                    page = self.adminmenu()
                 else:
                     page = self.index()
                 if not speccall:
@@ -643,6 +693,17 @@ class myHandler(BaseHTTPRequestHandler):
                     page = base % (
                         nbar, page, version, str(timer_stop - timer_start))
                     self.wfile.write(bytes(page, 'utf-8'))
+            except MissingPermission as mp:
+                timer_stop = time()
+                self.send_response(500)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                page = base % (nbar, messagehtml %
+                               ('danger',
+                                'You dont have the required permissions'),
+                               version, str(timer_stop - timer_start))
+                self.wfile.write(bytes(page, 'utf-8'))
+                raise e
             except Exception as e:
                 timer_stop = time()
                 self.send_response(500)

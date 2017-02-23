@@ -45,4 +45,8 @@ with open('html/light.css', 'rb') as f:
     lighttheme = f.read()
 with open('html/dark.css', 'rb') as f:
     darktheme = f.read()
+with open('html/adminmenu.html') as f:
+    adminmenu = f.read()
+with open('html/links_adminmenu.html') as f:
+    links_adminmenu = f.read()
 print("Pages loaded")

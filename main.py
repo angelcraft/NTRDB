@@ -19,7 +19,7 @@ from time import time
 import argparse
 from loader import *
 import dataset
-from custom_exception import MissingPermission, SQLException
+from custom_exception import MissingPermission, SQLException, BadUser
 import database
 
 parser = argparse.ArgumentParser()
@@ -174,9 +174,9 @@ class myHandler(BaseHTTPRequestHandler):
                             else:
                                 return messagehtml % (
                                     "danger", "Failed to reach the mailserver. Please try again later")
+                        """
                         return messagehtml % (
                             'danger', "This email is already registered")
-                        """
                     else:
                         user = self.cdb.addUser(mail, parsed['pword'])
                         self.cdb.activateUser(uid=user['uuid'])
@@ -219,20 +219,18 @@ class myHandler(BaseHTTPRequestHandler):
 
     def activate(self):
         args = parseURL(self.path)
-        if 'id' in args:
-            uid = args['id']
-            if self.cdb.activateUser(uid=uid):
-                succ = True
+        try:
+            if 'id' in args:
+                uid = args['id']
+                if self.cdb.activateUser(uid=uid):
+                    page = messagehtml % (
+                        'success', 'You successfully activated account!')
             else:
-                succ = False
-        else:
-            succ = False
-        if succ:
-            page = messagehtml % (
-                'success', 'You successfully activated account!')
-        else:
-            page = messagehtml % ('danger', 'Looks like you got bad link :(')
-        return page
+                page = messagehtml % ('danger', 'Looks like you got bad link :(')
+            return page
+        except SQLException as e:
+            raise e
+
 
     def logout(self):
         cuser = self.checkAuth()[0]
@@ -263,85 +261,92 @@ class myHandler(BaseHTTPRequestHandler):
         path = self.path[1:]
         if cuser:
             luser = self.cdb.getUser(email=cuser)
-            if luser != None:
-                parsed = parseURL(self.path)
+            parsed = parseURL(self.path)
+            if not parsed:
                 try:
-                    if not parsed:
-                        if luser['permissions'] == database.OWNER_LEVEL:
-                            for i in self.cdb.getAllUsers():
-                                table = table + links_adminmenu % (
-                                    i['email'],
-                                    i['permissions'],
-                                    "<a href='adminmenu?user=%s' class='btn btn-info btn-sm'>User</a>" % (i['email']),
-                                    "<a href='adminmenu?moder=%s' class='btn btn-info btn-sm'>Moderator</a>" % (i['email']),
-                                    "<a href='adminmenu?admin=%s' class='btn btn-info btn-sm'>Administrator</a>" % (i['email'])
-                                )
-                            page = adminmenu % (table)
-                        elif luser['permissions'] == database.ADMIN_LEVEL:
-                                for i in self.cdb.getAllUsers():
-                                    if i['permissions']>=database.MOD_LEVEL:
-                                        table = table + links_adminmenu % (
-                                            i['email'],
-                                            i['permissions'],
-                                            "<a href='adminmenu?user=%s' class='btn btn-info btn-sm'>User</a>" % (i['email']),
-                                            "<a href='adminmenu?moder=%s' class='btn btn-info btn-sm'>Moderator</a>" % (i['email']),
-                                            ""
-                                        )
-                                page = adminmenu % (table)
-                    elif 'user' in parsed:
-                        self.cdb.upgradePermis(cuser, parsed['user'], database.USER_LEVEL)
-                        page = messagehtml % ('success', 'User '+ parsed['user']+' is now user')
-                    elif 'moder' in parsed:
-                        self.cdb.upgradePermis(cuser, parsed['moder'], database.MOD_LEVEL)
-                        page = messagehtml % ('success', 'User '+ parsed['moder']+' is now Moderator')
-                    elif 'admin' in parsed:
-                        self.cdb.upgradePermis(cuser, parsed['admin'], database.ADMIN_LEVEL)
-                        page = messagehtml % ('success', 'User '+ parsed['admin']+' is now Administrator')
+                    if self.cdb.checkPermission(cuser, database.OWNER_LEVEL):
+                        for i in self.cdb.getAllUsers():
+                            table = table + links_adminmenu % (
+                                i['email'],
+                                i['permissions'],
+                                "<a href='adminmenu?user=%s' class='btn btn-info btn-sm'>User</a>" % (i['email']),
+                                "<a href='adminmenu?moder=%s' class='btn btn-info btn-sm'>Moderator</a>" % (i['email']),
+                                "<a href='adminmenu?admin=%s' class='btn btn-info btn-sm'>Administrator</a>" % (i['email'])
+                            )
+                        page = adminmenu % (table)
 
                 except MissingPermission as e:
-                    raise e
-                return page
+                    try:
+                        if self.cdb.checkPermission(cuser, database.ADMIN_LEVEL):
+                            for i in self.cdb.getAllUsers():
+                                if i['permissions']>=database.MOD_LEVEL:
+                                    table = table + links_adminmenu % (
+                                        i['email'],
+                                        i['permissions'],
+                                        "<a href='adminmenu?user=%s' class='btn btn-info btn-sm'>User</a>" % (i['email']),
+                                        "<a href='adminmenu?moder=%s' class='btn btn-info btn-sm'>Moderator</a>" % (i['email']),
+                                        ""
+                                    )
+                            page = adminmenu % (table)
+                    except MissingPermission as ex:
+                        raise ex
+            elif 'user' in parsed:
+                self.cdb.upgradePermis(cuser, parsed['user'], database.USER_LEVEL)
+                page = messagehtml % ('success', 'User '+ parsed['user']+' is now user')
+            elif 'moder' in parsed:
+                self.cdb.upgradePermis(cuser, parsed['moder'], database.MOD_LEVEL)
+                page = messagehtml % ('success', 'User '+ parsed['moder']+' is now Moderator')
+            elif 'admin' in parsed:
+                self.cdb.upgradePermis(cuser, parsed['admin'], database.ADMIN_LEVEL)
+                page = messagehtml % ('success', 'User '+ parsed['admin']+' is now Administrator')
+            return page
+        else:
+            raise BadUser("You have to log in to use this Page")
 
 
 #######################Plugin managment zone#################################
     def moderator(self):
         table = ""
-        isSearch = False
         path = self.path[1:]
         cuser, _ = self.checkAuth()
-        luser = self.cdb.getUser(email=cuser)
-        if luser["permissions"] <= database.MOD_LEVEL:
-            parsed = parseURL(self.path)
-            if not 'allow' in parsed:
-                if not isSearch:
-                    for item in self.cdb.getModPlugins():
-                        if not item["TitleID"] == "Not game":
-                            name = getgamebytid(item["TitleID"])
-                        else:
-                            name = ""
-                        table = table + links_mod % (
-                            name,
-                            item["name"],
-                            item["compatible"],
-                            item["added"],
-                            item['plg'],
-                            item['devsite'],
-                            item['id'],
-                            item['id'],
-                            item['id']
-                        )
-                page = mod % (table)
+        try:
+            if cuser:
+                if self.cdb.checkPermission(cuser):
+                    parsed = parseURL(self.path)
+                    if not 'allow' in parsed:
+                        for item in self.cdb.getModPlugins():
+                            if not item["TitleID"] == "Not game":
+                                name = getgamebytid(item["TitleID"])
+                            else:
+                                name = ""
+                            table = table + links_mod % (
+                                name,
+                                item["name"],
+                                item["compatible"],
+                                item["added"],
+                                item['plg'],
+                                item['devsite'],
+                                item['id'],
+                                item['id'],
+                                item['id']
+                            )
+                        page = mod % (table)
+                    else:
+                        plid = int(parsed['allow'])
+                        self.cdb.allowPlugin(cuser, plid)
+                        page = messagehtml % ('success', 'Plugin was approved!')
+                else:
+                    raise MissingPermission("Moderator")
             else:
-                plid = int(parsed['allow'])
-                self.cdb.allowPlugin(cuser, plid)
-                page = messagehtml % ('success', 'Plugin was approved!')
-        else:
-            page = messagehtml % ('info', 'This page avaible only for admin')
+                raise BadUser("You can't moderate if you are not loged in")
+        except SQLException as ex:
+            raise ex
+        except MissingPermission as ex:
+            raise ex
         return page
 
     def additem(self):
         cuser = self.checkAuth()[0]
-        luser = self.cdb.getUser(email=cuser)
         if cuser:
             message = ""
             parsed = parseURL(self.path)
@@ -392,129 +397,131 @@ class myHandler(BaseHTTPRequestHandler):
             else:
                 page = addfile
         else:
-            page = messagehtml % (
-                'danger', 'You cant add items because you are not logged in.')
+            raise BadUser("You can't add Plugins if you are not loged")
         return page
 
     def manage(self):
         cuser, _ = self.checkAuth()
-        luser = self.cdb.getUser(email=cuser)
-        if cuser:
-            uplg = []
-            table = ''
-            user = None
-            if luser['permissions'] <= database.ADMIN_LEVEL:
-                plglist = self.cdb.getAllPlugins()
-                for item in plglist:
-                    uplg.append(item['id'])
+        try:
+            if cuser:
+                uplg = []
+                table = ''
+                user = None
+                try:
+                    if self.cdb.checkPermission(cuser, database.ADMIN_LEVEL):
+                        plglist = self.cdb.getAllPlugins()
+                        for item in plglist:
+                            uplg.append(item['id'])
+
+                except MissingPermission as ex:
+                    user = self.cdb.getUser(email=cuser)
+                    for item in user['plugins']:
+                        plug = self.cdb.getPlugin(pid=item)
+                        if plug:
+                            uplg.append(plug)
+                for plugin in uplg:
+                    table = table + \
+                        links_mng % (plugin['name'], plugin['added'], item, item)
+                return managepage % table
             else:
-                user = self.cdb.getUser(email=cuser)
-                for item in user['plugins']:
-                    plug = self.cdb.getPlugin(pid=item)
-                    if plug:
-                        uplg.append(plug)
-            for plugin in uplg:
-                table = table + \
-                    links_mng % (plugin['name'], plugin['added'], item, item)
-            return managepage % table
-        else:
-            return messagehtml % ('danger', 'You cant manage your plugins because you are not logged in')
+                raise BadUser('You cant manage your plugins because you are not logged in')
+        except MissingPermission as ex:
+            raise ex
 
     def edit(self):
         args = parseURL(self.path)
         plid = int(args['plugid'])
         cuser = self.checkAuth()[0]
-        luser = self.cdb.getUser(email=cuser)
         if cuser:
-            if plid in luser['plugins'] or luser['permissions'] <= database.ADMIN_LEVEL:
-                message = ""
-                if 'edit' in args:
-                    plgp = args["link"]
-                    titleid = args['tid'].upper()
-                    plugname = args['name']
-                    developer = args['developer']
-                    devsite = args['devsite']
-                    desc = args['desc']
-                    ver = args['ver']
-                    cpb = args['ctype']
-                    pic = args['pic']
-                    badreq = False
-                    if plgp == "":
-                        message = "You havent entered path to plg file!"
-                        badreq = True
-                        succ = False
-                    if titleid == "":
-                        titleid = "Not game"
-                    elif not len(titleid) == 16:
-                        message = "You entered bad TitleID!"
-                        badreq = True
-                        succ = False
-                    if plugname == "":
-                        message = "You havent entered plugin's name!"
-                        badreq = True
-                        succ = False
-                    if not url(plgp) or not url(pic) or not url(devsite):
-                        message = "You entered bad URL!"
-                        badreq = True
-                        succ = False
-                    cl = self.cdb.getCloned(
-                        plg=plgp, TitleID=titleid, compatible=cpb, version=ver)
-                    if cl and cl["id"] != plid:
-                        badreq = True
-                        succ = False
-                        message = "Plugin already exists!"
-                    if not badreq:
-                        now = datetime.datetime.now()
-                        plugin = {'TitleID': titleid,
-                                  'name': plugname,
-                                  'developer': developer,
-                                  'devsite': devsite,
-                                  'desc': desc,
-                                  'plg': plgp,
-                                  'version': ver,
-                                  'compatible': cpb,
-                                  'pic': pic,
-                                  'pid': plid,
-                                  'user': cuser
-                                  }
-                        self.cdb.updatePlugin(**plugin)
-                        message = "Your plugin was edited successfully"
-                        succ = True
-                    if succ:
-                        message = messagehtml % ('success', message)
+            try:
+                if self.cdb.checkOwner(cuser, plid):
+                    message = ""
+                    if 'edit' in args:
+                        plgp = args["link"]
+                        titleid = args['tid'].upper()
+                        plugname = args['name']
+                        developer = args['developer']
+                        devsite = args['devsite']
+                        desc = args['desc']
+                        ver = args['ver']
+                        cpb = args['ctype']
+                        pic = args['pic']
+                        badreq = False
+                        if plgp == "":
+                            message = "You havent entered path to plg file!"
+                            badreq = True
+                            succ = False
+                        if titleid == "":
+                            titleid = "Not game"
+                        elif not len(titleid) == 16:
+                            message = "You entered bad TitleID!"
+                            badreq = True
+                            succ = False
+                        if plugname == "":
+                            message = "You havent entered plugin's name!"
+                            badreq = True
+                            succ = False
+                        if not url(plgp) or not url(pic) or not url(devsite):
+                            message = "You entered bad URL!"
+                            badreq = True
+                            succ = False
+                        cl = self.cdb.getCloned(
+                            plg=plgp, TitleID=titleid, compatible=cpb, version=ver)
+                        if cl and cl["id"] != plid:
+                            badreq = True
+                            succ = False
+                            message = "Plugin already exists!"
+                        if not badreq:
+                            now = datetime.datetime.now()
+                            plugin = {'TitleID': titleid,
+                                      'name': plugname,
+                                      'developer': developer,
+                                      'devsite': devsite,
+                                      'desc': desc,
+                                      'plg': plgp,
+                                      'version': ver,
+                                      'compatible': cpb,
+                                      'pic': pic,
+                                      'pid': plid,
+                                      'user': cuser
+                                      }
+                            self.cdb.updatePlugin(**plugin)
+                            message = "Your plugin was edited successfully"
+                            succ = True
+                        if succ:
+                            message = messagehtml % ('success', message)
+                        else:
+                            message = messagehtml % ('danger', message)
+                        page = message
                     else:
-                        message = messagehtml % ('danger', message)
-                    page = message
-                else:
-                    pl = self.cdb.getPlugin(pid=plid)
-                    page = editpage % (
-                        plid,
-                        pl['name'],
-                        pl['desc'],
-                        pl['version'],
-                        pl['developer'],
-                        pl['TitleID'],
-                        pl['devsite'],
-                        pl['plg'],
-                        pl['pic']
-                    )
-            else:
-                page = messagehtml % (
-                    'danger', 'You do not have permissions to edit this plugin.')
+                        pl = self.cdb.getPlugin(pid=plid)
+                        page = editpage % (
+                            plid,
+                            pl['name'],
+                            pl['desc'],
+                            pl['version'],
+                            pl['developer'],
+                            pl['TitleID'],
+                            pl['devsite'],
+                            pl['plg'],
+                            pl['pic']
+                        )
+            except MissingPermission as ex:
+                raise ex
+            except SQLException as ex:
+                raise ex
         else:
-            page = messagehtml % (
-                'danger', 'You cant add items because you are not logged in.')
+            raise BadUser('You cant add items because you are not logged in.')
         return page
 
     def rm(self):
         cuser, _ = self.checkAuth()
         args = parseURL(self.path)
-        luser = self.cdb.getUser(email=cuser)
         if cuser:
             plugid = int(args['plugid'])
             plugin = self.cdb.getPlugin(pid=plugid)
-            if plugin != None:
-                if plugin['uploader'] == luser['email'] or luser["permissions"] <= database.ADMIN_LEVEL:
+            try:
+                if self.cdb.checkOwner(cuser, plugid):
                     if 'sure' not in args:
                         plugin = self.cdb.getPlugin(pid=plugid)
                         pg = removal % (
@@ -525,10 +532,12 @@ class myHandler(BaseHTTPRequestHandler):
                     else:
                         self.cdb.removePlugin(user=cuser, pid=plugid)
                         return messagehtml % ('success', 'Your plugin was removed')
-                else:
-                    return messagehtml % ('danger', 'You dont have the permissions to delete this Plugin')
-            else:
-                return messagehtml % ('warning', 'No plugin with that ID found.')
+            except MissingPermission as ex:
+                raise ex
+            except SQLException as ex:
+                raise ex
+        else:
+            raise BadUser("You need to log in to delete Plugins")
 
 ###########################info zone##########################################
 
@@ -567,14 +576,10 @@ class myHandler(BaseHTTPRequestHandler):
             cuser, _ = self.checkAuth()
             luser = self.cdb.getUser(email=cuser)
             try:
-                if luser["permissions"] <= database.ADMIN_LEVEL or gid in luser["plugins"]:
+                if self.cdb.checkPermission(cuser, database.ADMIN_LEVEL):
                     options = 'Options:<a href="edit?plugid=%s" class="btn btn-secondary btn-sm">Edit</a><a href="rm?plugid=%s" class="btn btn-danger btn-sm">Remove</a>' % (
                         parsed['id'], parsed['id'])
-                else:
-                    options = ''
-            except KeyError:
-                options = ''
-            except TypeError:
+            except MissingPermission as ex:
                 options = ''
             if self.cdb.getPlugin(pid=gid) != None:
                 item = self.cdb.getPlugin(pid=gid)
@@ -629,9 +634,11 @@ class myHandler(BaseHTTPRequestHandler):
                 nbar = nbar_loggedin % (
                     cuser, '<a class="dropdown-item" href="mod">Moderation</a>', '<a class="dropdown-item" href="adminmenu">Administration</a>')
             elif luser["permissions"] <= database.MOD_LEVEL:
-                nbar = nbar_loggedin % (cuser, '<a class="dropdown-item" href="mod">Moderation</a>', '')
+                nbar = nbar_loggedin % (
+                    cuser, '<a class="dropdown-item" href="mod">Moderation</a>', '')
             else:
-                nbar = nbar_loggedin % (cuser, '', '')
+                nbar = nbar_loggedin % (
+                    cuser, '', '')
         else:
             nbar = nbar_login
         if not rcookies:
@@ -693,6 +700,28 @@ class myHandler(BaseHTTPRequestHandler):
                     page = base % (
                         nbar, page, version, str(timer_stop - timer_start))
                     self.wfile.write(bytes(page, 'utf-8'))
+            except BadUser as ex:
+                timer_stop = time()
+                self.send_response(500)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                page = base % (nbar, messagehtml %
+                               ('danger',
+                                str(ex)),
+                               version, str(timer_stop - timer_start))
+                self.wfile.write(bytes(page, 'utf-8'))
+                raise ex
+            except SQLException as ex:
+                timer_stop = time()
+                self.send_response(500)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                page = base % (nbar, messagehtml %
+                               ('danger',
+                                'The ' + str(ex) + ' requested was not found'),
+                               version, str(timer_stop - timer_start))
+                self.wfile.write(bytes(page, 'utf-8'))
+                raise ex
             except MissingPermission as mp:
                 timer_stop = time()
                 self.send_response(500)
@@ -700,10 +729,10 @@ class myHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 page = base % (nbar, messagehtml %
                                ('danger',
-                                'You dont have the required permissions'),
+                                'You need to be an ' + str(mp) + ' to be able to use this page'),
                                version, str(timer_stop - timer_start))
                 self.wfile.write(bytes(page, 'utf-8'))
-                raise e
+                raise mp
             except Exception as e:
                 timer_stop = time()
                 self.send_response(500)

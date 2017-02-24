@@ -163,31 +163,34 @@ class myHandler(BaseHTTPRequestHandler):
                 return reg_page
             else:
                 mail = parsed['email']
-                if email(mail):
-                    search = self.cdb.getUser(email=mail)
-                    if search != None:
-                        """
-                        if not search['activate']:
-                            if self.send_mail(search["email"], search["uuid"]):
+                if 'pword' in parsed:
+                    if email(mail):
+                        search = self.cdb.getUser(email=mail)
+                        if search != None:
+                            """
+                            if not search['activate']:
+                                if self.send_mail(search["email"], search["uuid"]):
+                                    return messagehtml % (
+                                        'info', "Resending the activation mail from ntrdb@octonezd.pw!")
+                                else:
+                                    return messagehtml % (
+                                        "danger", "Failed to reach the mailserver. Please try again later")
+                            """
+                            return messagehtml % (
+                                'danger', "This email is already registered")
+                        else:
+                            user = self.cdb.addUser(mail, parsed['pword'])
+                            self.cdb.activateUser(uid=user['uuid'])
+                            if self.send_mail(user["email"], user["uuid"]):
                                 return messagehtml % (
-                                    'info', "Resending the activation mail from ntrdb@octonezd.pw!")
+                                    'info', "You have registered succesfully!")
                             else:
                                 return messagehtml % (
                                     "danger", "Failed to reach the mailserver. Please try again later")
-                        """
-                        return messagehtml % (
-                            'danger', "This email is already registered")
                     else:
-                        user = self.cdb.addUser(mail, parsed['pword'])
-                        self.cdb.activateUser(uid=user['uuid'])
-                        if self.send_mail(user["email"], user["uuid"]):
-                            return messagehtml % (
-                                'info', "You have registered succesfully!")
-                        else:
-                            return messagehtml % (
-                                "danger", "Failed to reach the mailserver. Please try again later")
+                        return messagehtml % ('danger', "You entered bad email.")
                 else:
-                    return messagehtml % ('danger', "You entered bad email.")
+                    return messagehtml % ("danger", "You havent specifed password")
 
     def send_mail(self, mail, uid):
         return True

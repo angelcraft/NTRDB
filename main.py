@@ -344,7 +344,7 @@ class myHandler(BaseHTTPRequestHandler):
                 else:
                     raise MissingPermission("Moderator")
             else:
-                raise BadUser("You can't moderate if you are not loged in")
+                raise BadUser("You can't moderate if you are not logged in")
         except SQLException as ex:
             raise ex
         except MissingPermission as ex:
@@ -403,7 +403,7 @@ class myHandler(BaseHTTPRequestHandler):
             else:
                 page = addfile
         else:
-            raise BadUser("You can't add Plugins if you are not loged")
+            raise BadUser("You can't add Plugins if you are not logged in")
         return page
 
     def manage(self):
@@ -552,7 +552,9 @@ class myHandler(BaseHTTPRequestHandler):
         isSearch = False
         path = self.path[1:]
         parsed = parseURL(self.path)
+        count = 0
         for item in self.cdb.getApproved():
+            count = count + 1
             if not item["TitleID"] == "Not game":
                 name = getgamebytid(item["TitleID"])
             else:
@@ -572,7 +574,7 @@ class myHandler(BaseHTTPRequestHandler):
                 item['devsite'],
                 item['id']
             )
-        page = index % (table)
+        page = index % (count,table)
         return page
 
     def description(self):
@@ -749,7 +751,7 @@ class myHandler(BaseHTTPRequestHandler):
                 page = base % (nbar, messagehtml %
                                ('danger',
                                 'Oops! An error occured when processing your request!'),
-                               version, str(timer_stop - timer_start))
+                               version, str(timer_stop - timer_start),0)
                 self.wfile.write(bytes(page, 'utf-8'))
                 raise e
 

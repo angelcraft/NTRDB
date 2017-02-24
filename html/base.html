@@ -52,7 +52,7 @@
             </style>
             <link rel="stylesheet" type="text/css" id="theme_css" href="light.css">
       </head>
-      <body>
+      <body id="body">
             <script type="text/javascript">
               $(document).ready( function () {
                   $('#plugins').DataTable();
@@ -86,30 +86,34 @@
                 </ul>
               </div>
             </nav>
+            <div id="main">
             <div class="container">
                 <p></p>
                 %s
                 <p></p>
             </div>
-            <nav class="navbar navbar-toggleable-md navbar-light bottom nomobile" id='LoBar'>
-              <div class="collapse navbar-collapse" id="navbarsExampleDefault">
-                <ul class="navbar-nav mr-auto">
-                  <li class="nav-item">
-                    <a class="nav-link" href="http://github.com/octonezd/ntrdb">Based on commit:%s</a>
-                  </li>
-                  <center>
+              <nav class="navbar navbar-toggleable-md navbar-light bottom nomobile" id='LoBar'>
+                <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+                  <ul class="navbar-nav mr-auto">
                     <li class="nav-item">
-                      <a class="navbar-text">Page generated in %s seconds</a>
+                      <a class="nav-link" href="http://github.com/octonezd/ntrdb">Based on commit:%s</a>
                     </li>
-                  </center>
-                  <li class="nav-item justify-content-end">
-                    <a class="nav-link" href="https://github.com/OctoNezd/NTRDB/blob/master/LICENSE">License</a>
-                  </li>
-                </ul>
-              </div>
-            </nav>
-            <!--<script src="https://code.jquery.com/jquery-3.1.1.slim.min.js" integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n" crossorigin="anonymous"></script> -->
+                    <center>
+                      <li class="nav-item">
+                        <a class="navbar-text">Page generated in %s seconds</a>
+                      </li>
+                    </center>
+                    <li class="nav-item justify-content-end">
+                      <a class="nav-link" href="https://github.com/OctoNezd/NTRDB/blob/master/LICENSE">License</a>
+                    </li>
+                  </ul>
+                </div>
+              </nav>
+            </div>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
             <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
+            <script type="text/javascript">
+              $("#header").prependTo("#main");
+            </script>
       </body>
       </html>

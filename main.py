@@ -102,6 +102,7 @@ def getgamebytid(tid):
 class myHandler(BaseHTTPRequestHandler):
     cdb = None
     __version__ = "NTRDB/2.7"
+
     def __init__(self, *args, **kwargs):
         self.cdb = database.database()
         super(myHandler, self).__init__(*args, **kwargs)
@@ -181,6 +182,7 @@ class myHandler(BaseHTTPRequestHandler):
                                     if self.send_mail(search["email"], search["uuid"]):
                                         return messagehtml % (
                                             'info', "Resending the activation mail from ntrdb@octonezd.pw!")
+
                                     else:
                                         return messagehtml % (
                                             "danger", "Failed to reach the mailserver. Please try again later")
@@ -260,9 +262,9 @@ class myHandler(BaseHTTPRequestHandler):
             del sessions[computeMD5hash(self.cookie['AToken'])]
         else:
             page = base % ('', messagehtml % ('danger', "<center><figure class=\"figure\">"
-                                                       "<img src=\"http://share.mostmodest.ru/2017/02/H2hgPCa.png\" class=\"figure-img img-fluid rounded\" alt=\"meme\">"
-                                                       "<figcaption class=\"figure-caption\">You cant logout if you are not logged in.</figcaption>"
-                                                       "</figure></center>"), version, '0')
+                                              "<img src=\"http://share.mostmodest.ru/2017/02/H2hgPCa.png\" class=\"figure-img img-fluid rounded\" alt=\"meme\">"
+                                              "<figcaption class=\"figure-caption\">You cant logout if you are not logged in.</figcaption>"
+                                              "</figure></center>"), version, '0')
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
@@ -288,7 +290,9 @@ class myHandler(BaseHTTPRequestHandler):
                                 "<a href='adminmenu?moder=%s' class='btn btn-info btn-sm'>Moderator</a>" % (i[
                                                                                                             'email']),
                                 "<a href='adminmenu?admin=%s' class='btn btn-info btn-sm'>Administrator</a>" % (i[
-                                                                                                                'email'])
+                                                                                                                'email']),
+                                "<a href='adminmenu?ban=%s' class='btn btn-danger btn-sm'>Ban</a>" % (i[
+                                                                                                    'email'])
                             )
                         page = adminmenu % (table)
 
@@ -304,6 +308,8 @@ class myHandler(BaseHTTPRequestHandler):
                                                                                                               'email']),
                                         "<a href='adminmenu?moder=%s' class='btn btn-info btn-sm'>Moderator</a>" % (i[
                                                                                                                     'email']),
+                                        "<a href='adminmenu?ban=%s' class='btn btn-danger btn-sm'>Ban</a>" % (i[
+                                                                                                    'email']),
                                         ""
                                     )
                             page = adminmenu % (table)
@@ -324,6 +330,10 @@ class myHandler(BaseHTTPRequestHandler):
                     cuser, parsed['admin'], database.ADMIN_LEVEL)
                 page = messagehtml % (
                     'success', 'User ' + parsed['admin'] + ' is now Administrator')
+            elif 'ban' in parsed:
+                self.cdb.banUser(cuser, parsed['ban'])
+                page = messagehtml % (
+                    'success', 'User ' + parsed['ban'] + ' is now Banned')
             return page
         else:
             raise BadUser("You have to log in to use this Page")
@@ -599,7 +609,7 @@ class myHandler(BaseHTTPRequestHandler):
             )
         if count == 0:
             table = "<center><h3>No items :(</h3></center>"
-        page = index % (count,table)
+        page = index % (count, table)
         return page
 
     def description(self):
@@ -778,7 +788,8 @@ class myHandler(BaseHTTPRequestHandler):
                     user['banned'] = True
                 else:
                     alertmsg = '\nYour account now has ' + \
-                        str(user['strikes']+1) + ' out of ' + str(MAX_STIKES) + ' strikes'
+                        str(user['strikes'] + 1) + ' out of ' + \
+                        str(MAX_STIKES) + ' strikes'
                 user['strikes'] = user['strikes'] + 1
                 self.cdb.updateUser(cuser, cuser, **user)
                 page = base % (nbar, messagehtml %

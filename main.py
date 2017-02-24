@@ -581,6 +581,8 @@ class myHandler(BaseHTTPRequestHandler):
                         parsed['id'], parsed['id'])
             except MissingPermission as ex:
                 options = ''
+            except TypeError:
+                options = ''
             if self.cdb.getPlugin(pid=gid) != None:
                 item = self.cdb.getPlugin(pid=gid)
                 name = str(item['name'])

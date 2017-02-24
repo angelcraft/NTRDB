@@ -96,7 +96,7 @@ def getgamebytid(tid):
 
 class myHandler(BaseHTTPRequestHandler):
     cdb = None
-
+    __version__ = "NTRDB/2.7"
     def __init__(self, *args, **kwargs):
         self.cdb = database.database()
         super(myHandler, self).__init__(*args, **kwargs)

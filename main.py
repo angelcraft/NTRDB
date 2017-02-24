@@ -245,10 +245,10 @@ class myHandler(BaseHTTPRequestHandler):
                 version, page + b'<meta http-equiv="refresh" content="1; URL=index">', '', str(1))), 'utf-8'))
             del sessions[computeMD5hash(self.cookie['AToken'])]
         else:
-            page = base % (version, '', messagehtml % ('danger', "<center><figure class=\"figure\">"
+            page = base % ('', messagehtml % ('danger', "<center><figure class=\"figure\">"
                                                        "<img src=\"http://share.mostmodest.ru/2017/02/H2hgPCa.png\" class=\"figure-img img-fluid rounded\" alt=\"meme\">"
                                                        "<figcaption class=\"figure-caption\">You cant logout if you are not logged in.</figcaption>"
-                                                       "</figure></center>"), '')
+                                                       "</figure></center>"), version, '0')
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()

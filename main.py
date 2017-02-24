@@ -566,14 +566,17 @@ class myHandler(BaseHTTPRequestHandler):
             elif item['compatible'] == 'o3ds':
                 cpbicon = iold
             table = table + links % (
-                cpbicon,
-                name,
+                item['pic'],
                 item["name"],
-                item["added"],
+                "For " + name,
+                item["desc"],
                 item['plg'],
                 item['devsite'],
-                item['id']
+                cpbicon,
+                item["added"],
             )
+        if count == 0:
+            table = "<center><h3>No items :(</h3></center>"
         page = index % (count,table)
         return page
 
@@ -751,7 +754,7 @@ class myHandler(BaseHTTPRequestHandler):
                 page = base % (nbar, messagehtml %
                                ('danger',
                                 'Oops! An error occured when processing your request!'),
-                               version, str(timer_stop - timer_start),0)
+                               version, str(timer_stop - timer_start))
                 self.wfile.write(bytes(page, 'utf-8'))
                 raise e
 

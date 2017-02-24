@@ -1,10 +1,27 @@
-<tr>
-<td><img width='64' src="data:image/png;base64,%s"></td>
-<td class='nomobile'>%s</td>
-<td>%s</td>
-<td class='nomobile'>%s</td>
-<td><a href="%s" class="btn btn-primary btn-sm btnblock"><i class="fa fa-download" aria-hidden="true"></i> Download</a>
-<a href="%s" class="btn btn-secondary btn-sm btnblock"><i class="fa fa-link" aria-hidden="true"></i> Site</a>
-<a href="description?id=%s" class="btn btn-info btn-sm btnblock"><i class="fa fa-info" aria-hidden="true"></i> Description</a>
+<!--<tr>
+<td><img width='64' src="data:image/png;base64,%%s"></td>
+<td class='nomobile'>%%s</td>
+<td>%%s</td>
+<td class='nomobile'>%%s</td>
+<td><a href="%%s" class="btn btn-primary btn-sm btnblock"><i class="fa fa-download" aria-hidden="true"></i> Download</a>
+<a href="%%s" class="btn btn-secondary btn-sm btnblock"><i class="fa fa-link" aria-hidden="true"></i> Site</a>
+<a href="description?id=%%s" class="btn btn-info btn-sm btnblock"><i class="fa fa-info" aria-hidden="true"></i> Description</a>
 </td>
 </tr>
+-->
+<div class="card" width='256'>
+	<img class="card-img-top" src="%s" alt="Card image cap" style="width:256px;height: 180px">
+	<div class="card-block">
+	  <h4 class="card-title">%s</h4>
+	  <p class="card-title">%s</p>
+	  <p class="card-text">%s</p>
+	  <ul class="list-group list-group-flush">
+	    <li class="list-group-item"><a href="%s"><i class="fa fa-download fa-fw" aria-hidden="true"></i> Download</a></li>
+	    <li class="list-group-item"><a href="%s"><i class="fa fa-link fa-fw" aria-hidden="true"></i> Site</a></li>
+	  </ul>
+	</div>
+	  <div class="card-footer">
+	  <p class="card-text"><small class="text-muted">For <img width='64' src="data:image/png;base64,%s"> 3DS</small></p>
+	  <p class="card-text"><small class="text-muted">Added:%s</small></p>
+	</div>
+</div>

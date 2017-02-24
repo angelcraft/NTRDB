@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
       <head>
+            <script src="https://use.fontawesome.com/1fa2fdd929.js"></script>
             <script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.js"></script>
             <link rel="shortcut icon" type="image/png" href="favicon.png" />
             <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
@@ -14,6 +15,7 @@
             <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.13/css/dataTables.bootstrap4.min.css">
             <!-- Bootstrap CSS -->
             <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+            <!--<link rel="stylesheet" href="animate.min.css">-->
             <style>
             .row {
                 width: 100%% !important;
@@ -32,10 +34,11 @@
                 max-height: 600px;
                 height: 100%%;
             }
-            @media (max-width: 575px) { 
-              .mobileblock {
+            .btnblock {
                   display: block;
-              }
+                  width: 90%%;
+            }
+            @media (max-width: 575px) { 
               .screenshot {
                   max-width: 575px !important;
                   width: 100%% !important;
@@ -49,7 +52,7 @@
             </style>
             <link rel="stylesheet" type="text/css" id="theme_css" href="light.css">
       </head>
-      <body>
+      <body id="body">
             <script type="text/javascript">
               $(document).ready( function () {
                   $('#plugins').DataTable();
@@ -74,33 +77,43 @@
                   </li>
                   -->
                   %s
+                  <li class="nav-item dropdown navbar-right">
+                  <a class="nav-link dropdown-toggle navbar-right" href="#" id="dropdown02" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Social</a>
+                  <div class="dropdown-menu" aria-labelledby="dropdown02">
+                  <a class="dropdown-item" href="http://t.me/dshacking"><i class="fa fa-telegram" aria-hidden="true"></i> Telegram group</a>
+                  <a class="dropdown-item" href="http://gbatemp.net/threads/wip-ntrdb.461288/"><i class="fa fa-users" aria-hidden="true"></i> GBATemp thread</a>
+                  </li>
                 </ul>
               </div>
             </nav>
+            <div id="main">
             <div class="container">
                 <p></p>
                 %s
                 <p></p>
             </div>
-            <nav class="navbar navbar-toggleable-md navbar-light bottom nomobile" id='LoBar'>
-              <div class="collapse navbar-collapse" id="navbarsExampleDefault">
-                <ul class="navbar-nav mr-auto">
-                  <li class="nav-item">
-                    <a class="nav-link" href="http://github.com/octonezd/ntrdb">Based on commit:%s</a>
-                  </li>
-                  <center>
+              <nav class="navbar navbar-toggleable-md navbar-light bottom nomobile" id='LoBar'>
+                <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+                  <ul class="navbar-nav mr-auto">
                     <li class="nav-item">
-                      <a class="nav-link disabled" href="#">Page generated in %s seconds</a>
+                      <a class="nav-link" href="http://github.com/octonezd/ntrdb">Based on commit:%s</a>
                     </li>
-                  </center>
-                  <li class="nav-item justify-content-end">
-                    <a class="nav-link" href="https://github.com/OctoNezd/NTRDB/blob/master/LICENSE">License</a>
-                  </li>
-                </ul>
-              </div>
-            </nav>
-            <!--<script src="https://code.jquery.com/jquery-3.1.1.slim.min.js" integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n" crossorigin="anonymous"></script> -->
+                    <center>
+                      <li class="nav-item">
+                        <a class="navbar-text">Page generated in %s seconds</a>
+                      </li>
+                    </center>
+                    <li class="nav-item justify-content-end">
+                      <a class="nav-link" href="https://github.com/OctoNezd/NTRDB/blob/master/LICENSE">License</a>
+                    </li>
+                  </ul>
+                </div>
+              </nav>
+            </div>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
             <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
+            <script type="text/javascript">
+              $("#header").prependTo("#main");
+            </script>
       </body>
       </html>

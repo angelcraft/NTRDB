@@ -1,53 +1,64 @@
 <form method="get">
-  <div class="form-group">
-    <label for="id">Plugin name</label>
+  <span for="id">Plugin name</span>
+  <div class="input-group mb-2 mr-sm-2 mb-sm-0">    
+    <div class="input-group-addon"><i class="fa fa-i-cursor" aria-hidden="true"></i></div>
     <input type="text" class="form-control" id="name" name="name" required placeholder="Cool NTR plugin!">
   </div>
-  <div class="form-group">
-    <label for="desc">Description</label>
+  <span for="desc">Description</span>
+  <div class="input-group mb-2 mr-sm-2 mb-sm-0">  
+    <div class="input-group-addon"><i class="fa fa-info" aria-hidden="true"></i></div>
     <textarea class="form-control" rows="3" id="desc" name="desc" required=""></textarea>
   </div>
-  <div class="form-group">
-    <label for="version">Version(numbers only)</label>
+  <span for="version">Version(numbers only)</span>
+  <div class="input-group mb-2 mr-sm-2 mb-sm-0">  
+    <div class="input-group-addon"><i class="fa fa-code-fork" aria-hidden="true"></i></div>
     <input type="text" class="form-control" id="version" name="ver" placeholder="0" required="" pattern="^[ 0-9]+$">
   </div>
-  <div class="form-group">
-    <label for="developer">Developer name</label>
+  <span for="developer">Developer name</span>
+  <div class="input-group mb-2 mr-sm-2 mb-sm-0">  
+    <div class="input-group-addon"><i class="fa fa-user" aria-hidden="true"></i></div>
     <input type="text" class="form-control" id="developer" name="developer" placeholder="Developer", required>
   </div>
-  <div class="form-group">
-    <label for="tid">Game's TitleID(16 symbols long, optional if there is none the game will show up as Not Game)</label>
+  <span for="tid">Game's TitleID(16 symbols long, optional if there is none the game will show up as Not Game)</span>
+  <div class="input-group mb-2 mr-sm-2 mb-sm-0">
+    <div class="input-group-addon"><i class="fa fa-gamepad" aria-hidden="true"></i></div>  
     <input type="text" class="form-control" id="tid" name="tid" placeholder="000400000017C300">
   </div>
-  <div class="form-group">
-    <label for="site">Site or forum thread of plugin</label>
+  <span for="site">Site or forum thread of plugin</span>
+  <div class="input-group mb-2 mr-sm-2 mb-sm-0">  
+    <div class="input-group-addon"><i class="fa fa-link" aria-hidden="true"></i></div>
     <input type="text" class="form-control" id="site" name="devsite" placeholder="http://example.com/" required="">
   </div>
-  <div class="form-group">
-    <label for="link">Download link(direct to .plg file)</label>
+  <span for="link">Download link(direct to .plg file)</span>
+  <div class="input-group mb-2 mr-sm-2 mb-sm-0">  
+    <div class="input-group-addon"><i class="fa fa-download" aria-hidden="true"></i></div>
     <input type="text" class="form-control" id="link" name="link" placeholder="http://example.com/example.plg" required>
   </div>
-  <div class="form-group">
-    <label for="id">Picture(optional, static link)</label>
+  <span for="id">Picture(optional, static link)</span>
+  <div class="input-group mb-2 mr-sm-2 mb-sm-0">  
+    <div class="input-group-addon"><i class="fa fa-picture-o" aria-hidden="true"></i></div>
     <input type="text" class="form-control" id="pic" name="pic" placeholder="http://example.com/example.png">
   </div>
   Select an compatible 3DS version for that plugin:
   <div class="form-check">
-  <label class="form-check-label">
-    <input class="form-check-input" type="radio" name="ctype" id="universal" value="universal" checked>
-    Universal
-  </label>
+    <label class="custom-control custom-radio">
+      <input class="form-check-input custom-control-input" type="radio" name="ctype" id="universal" value="universal" checked>
+      <span class="custom-control-indicator"></span>
+      <span class="custom-control-description">Universal</span>
+    </label>
   </div>
   <div class="form-check">
-    <label class="form-check-label">
-      <input class="form-check-input" type="radio" name="ctype" id="Old 3DS" value="o3ds">
-      Old3DS Only
+    <label class="custom-control custom-radio">
+      <input class="form-check-input custom-control-input" type="radio" name="ctype" id="Old 3DS" value="o3ds">
+      <span class="custom-control-indicator"></span>
+      <span class="custom-control-description">Old3DS Only</span>
     </label>
   </div>
   <div class="form-check ">
-    <label class="form-check-label">
-      <input class="form-check-input" type="radio" name="ctype" id="New 3DS" value="n3ds">
-      New3DS Only
+    <label class="custom-control custom-radio">
+      <input class="form-check-input custom-control-input" type="radio" name="ctype" id="New 3DS" value="n3ds">
+      <span class="custom-control-indicator"></span>
+      <span class="custom-control-description">New3DS Only</span>
     </label>
 </div>
   <input type="hidden" name='add' value="1">

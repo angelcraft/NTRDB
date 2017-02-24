@@ -96,7 +96,7 @@ def getgamebytid(tid):
 
 class myHandler(BaseHTTPRequestHandler):
     cdb = None
-
+    __version__ = "NTRDB/2.7"
     def __init__(self, *args, **kwargs):
         self.cdb = database.database()
         super(myHandler, self).__init__(*args, **kwargs)
@@ -163,31 +163,37 @@ class myHandler(BaseHTTPRequestHandler):
                 return reg_page
             else:
                 mail = parsed['email']
-                if email(mail):
-                    search = self.cdb.getUser(email=mail)
-                    if search != None:
-                        """
-                        if not search['activate']:
-                            if self.send_mail(search["email"], search["uuid"]):
+                if 'pword' in parsed:
+                    if len(parsed['pword']) > 3:
+                        if email(mail):
+                            search = self.cdb.getUser(email=mail)
+                            if search != None:
+                                """
+                                if not search['activate']:
+                                    if self.send_mail(search["email"], search["uuid"]):
+                                        return messagehtml % (
+                                            'info', "Resending the activation mail from ntrdb@octonezd.pw!")
+                                    else:
+                                        return messagehtml % (
+                                            "danger", "Failed to reach the mailserver. Please try again later")
+                                """
                                 return messagehtml % (
-                                    'info', "Resending the activation mail from ntrdb@octonezd.pw!")
+                                    'danger', "This email is already registered")
                             else:
-                                return messagehtml % (
-                                    "danger", "Failed to reach the mailserver. Please try again later")
-                        """
-                        return messagehtml % (
-                            'danger', "This email is already registered")
-                    else:
-                        user = self.cdb.addUser(mail, parsed['pword'])
-                        self.cdb.activateUser(uid=user['uuid'])
-                        if self.send_mail(user["email"], user["uuid"]):
-                            return messagehtml % (
-                                'info', "You have registered succesfully!")
+                                user = self.cdb.addUser(mail, parsed['pword'])
+                                self.cdb.activateUser(uid=user['uuid'])
+                                if self.send_mail(user["email"], user["uuid"]):
+                                    return messagehtml % (
+                                        'info', "You have registered succesfully!")
+                                else:
+                                    return messagehtml % (
+                                        "danger", "Failed to reach the mailserver. Please try again later")
                         else:
-                            return messagehtml % (
-                                "danger", "Failed to reach the mailserver. Please try again later")
+                            return messagehtml % ('danger', "You entered bad email.")
+                    else:
+                        return messagehtml % ('danger', "You password is very short! Minimum is 4 symbols")
                 else:
-                    return messagehtml % ('danger', "You entered bad email.")
+                    return messagehtml % ("danger", "You havent specifed password")
 
     def send_mail(self, mail, uid):
         return True
@@ -245,10 +251,10 @@ class myHandler(BaseHTTPRequestHandler):
                 version, page + b'<meta http-equiv="refresh" content="1; URL=index">', '', str(1))), 'utf-8'))
             del sessions[computeMD5hash(self.cookie['AToken'])]
         else:
-            page = base % (version, '', messagehtml % ('danger', "<center><figure class=\"figure\">"
+            page = base % ('', messagehtml % ('danger', "<center><figure class=\"figure\">"
                                                        "<img src=\"http://share.mostmodest.ru/2017/02/H2hgPCa.png\" class=\"figure-img img-fluid rounded\" alt=\"meme\">"
                                                        "<figcaption class=\"figure-caption\">You cant logout if you are not logged in.</figcaption>"
-                                                       "</figure></center>"), '')
+                                                       "</figure></center>"), version, '0')
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
@@ -338,7 +344,7 @@ class myHandler(BaseHTTPRequestHandler):
                 else:
                     raise MissingPermission("Moderator")
             else:
-                raise BadUser("You can't moderate if you are not loged in")
+                raise BadUser("You can't moderate if you are not logged in")
         except SQLException as ex:
             raise ex
         except MissingPermission as ex:
@@ -397,7 +403,7 @@ class myHandler(BaseHTTPRequestHandler):
             else:
                 page = addfile
         else:
-            raise BadUser("You can't add Plugins if you are not loged")
+            raise BadUser("You can't add Plugins if you are not logged in")
         return page
 
     def manage(self):
@@ -546,7 +552,9 @@ class myHandler(BaseHTTPRequestHandler):
         isSearch = False
         path = self.path[1:]
         parsed = parseURL(self.path)
+        count = 0
         for item in self.cdb.getApproved():
+            count = count + 1
             if not item["TitleID"] == "Not game":
                 name = getgamebytid(item["TitleID"])
             else:
@@ -558,15 +566,18 @@ class myHandler(BaseHTTPRequestHandler):
             elif item['compatible'] == 'o3ds':
                 cpbicon = iold
             table = table + links % (
-                cpbicon,
-                name,
+                item['pic'],
                 item["name"],
-                item["added"],
+                "For " + name,
+                item["desc"],
                 item['plg'],
                 item['devsite'],
-                item['id']
+                cpbicon,
+                item["added"],
             )
-        page = index % (table)
+        if count == 0:
+            table = "<center><h3>No items :(</h3></center>"
+        page = index % (count,table)
         return page
 
     def description(self):
@@ -580,6 +591,8 @@ class myHandler(BaseHTTPRequestHandler):
                     options = 'Options:<a href="edit?plugid=%s" class="btn btn-secondary btn-sm">Edit</a><a href="rm?plugid=%s" class="btn btn-danger btn-sm">Remove</a>' % (
                         parsed['id'], parsed['id'])
             except MissingPermission as ex:
+                options = ''
+            except TypeError:
                 options = ''
             if self.cdb.getPlugin(pid=gid) != None:
                 item = self.cdb.getPlugin(pid=gid)

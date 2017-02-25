@@ -371,7 +371,9 @@ class myHandler(BaseHTTPRequestHandler):
             parsed = parseURL(self.path)
             if 'add' in parsed:
                 plgp = parsed["link"]
-                titleid = parsed['tid'].upper()
+                titleid_str = parsed['tid'].upper()
+                titleid = parsed['tid'].upper().split(';')
+                print(titleid)
                 plugname = parsed['name']
                 developer = parsed['developer']
                 devsite = parsed['devsite']
@@ -384,17 +386,19 @@ class myHandler(BaseHTTPRequestHandler):
                     message = "You havent entered path to plg file!"
                     badreq = True
                     succ = False
-                if titleid == "":
-                    titleid = "Not game"
-                elif not len(titleid) == 16:
-                    message = "You entered bad TitleID!"
-                    badreq = True
-                    succ = False
-                elif plugname == "":
+                if titleid_str == "":
+                    titleid_str = "Not game"
+                else:
+                    for item in titleid:
+                        if not len(item) == 16:
+                            message = "One of TitleIDs is invalid!"
+                            badreq = True
+                            succ = False
+                if plugname == "":
                     message = "You havent entered plugin's name!"
                     badreq = True
                     succ = False
-                elif not url(plgp) or not url(pic) or not url(devsite):
+                elif not url(plgp) or not url(pic) and not pic=='' or not url(devsite):
                     message = "You entered bad URL!"
                     badreq = True
                     succ = False
@@ -405,7 +409,7 @@ class myHandler(BaseHTTPRequestHandler):
                 if not badreq:
                     now = datetime.datetime.now()
                     plugin = self.cdb.addPlugin(
-                        cuser, plugname, desc, ver, developer, titleid, devsite, plgp, cpb, pic)
+                        cuser, plugname, desc, ver, developer, titleid_str, devsite, plgp, cpb, pic)
                     message = "Your plugin were added to base. Now you need to wait for moderator to approve it."
                     succ = True
                 if succ:
@@ -459,7 +463,8 @@ class myHandler(BaseHTTPRequestHandler):
                     message = ""
                     if 'edit' in args:
                         plgp = args["link"]
-                        titleid = args['tid'].upper()
+                        titleid_str = args['tid'].upper()
+                        titleid = args['tid'].upper().split(';')
                         plugname = args['name']
                         developer = args['developer']
                         devsite = args['devsite']
@@ -474,10 +479,11 @@ class myHandler(BaseHTTPRequestHandler):
                             succ = False
                         if titleid == "":
                             titleid = "Not game"
-                        elif not len(titleid) == 16:
-                            message = "You entered bad TitleID!"
-                            badreq = True
-                            succ = False
+                        for item in titleid:
+                            if not len(item) == 16:
+                                message = "You entered bad TitleID!"
+                                badreq = True
+                                succ = False
                         if plugname == "":
                             message = "You havent entered plugin's name!"
                             badreq = True
@@ -494,7 +500,7 @@ class myHandler(BaseHTTPRequestHandler):
                             message = "Plugin already exists!"
                         if not badreq:
                             now = datetime.datetime.now()
-                            plugin = {'TitleID': titleid,
+                            plugin = {'TitleID': titleid_str,
                                       'name': plugname,
                                       'developer': developer,
                                       'devsite': devsite,
@@ -569,23 +575,31 @@ class myHandler(BaseHTTPRequestHandler):
         count = 0
         for item in self.cdb.getApproved():
             count = count + 1
+            name = "For "
+            print(item["TitleID"])
             if not item["TitleID"] == "Not game":
-                name = getgamebytid(item["TitleID"])
+                for game in item["TitleID"].split(";"):
+                    name = name + getgamebytid(game) + ', '
+                name = name[:-1]
             else:
-                name = ""
+                name = ''
             if item['compatible'] == 'universal':
                 cpbicon = iany
             elif item['compatible'] == 'n3ds':
                 cpbicon = inew
             elif item['compatible'] == 'o3ds':
                 cpbicon = iold
+            if item['pic'] == '':
+                pic = 'http://vignette1.wikia.nocookie.net/mario/images/6/61/Item_Box_(Mario_Kart_8).png/revision/latest/scale-to-width-down/550?cb=20140505194326'
+            else:
+                pic = item['pic']
             table = table + links % (
                 count,
                 item['name'],
                 item["desc"].replace('\n', '<br>'),
-                item['pic'],
+                pic,
                 item["name"],
-                "For " + name,
+                name,
                 count,
                 item['plg'],
                 item['devsite'],
@@ -822,15 +836,16 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 
     """Handle requests in a separate thread."""
 
+
 db = database.database()
 count = 0
 for i in db.getAllPermissionUsers(database.OWNER_LEVEL):
     count += 1
 if count == 0:
-    email = input("Owner email: ")
+    mail = input("Owner email: ")
     passwd = input("Owner Password: ")
-    db.createOwner(email, passwd)
-    del email
+    db.createOwner(mail, passwd)
+    del mail
     del passwd
 
 try:

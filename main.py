@@ -580,7 +580,7 @@ class myHandler(BaseHTTPRequestHandler):
             if not item["TitleID"] == "Not game":
                 for game in item["TitleID"].split(";"):
                     name = name + getgamebytid(game) + ', '
-                name = name[:-1]
+                name = name[:-2]
             else:
                 name = ''
             if item['compatible'] == 'universal':

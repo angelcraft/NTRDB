@@ -97,6 +97,7 @@ def getgamebytid(tid):
 class myHandler(BaseHTTPRequestHandler):
     cdb = None
     __version__ = "NTRDB/2.7"
+
     def __init__(self, *args, **kwargs):
         self.cdb = database.database()
         super(myHandler, self).__init__(*args, **kwargs)
@@ -232,11 +233,11 @@ class myHandler(BaseHTTPRequestHandler):
                     page = messagehtml % (
                         'success', 'You successfully activated account!')
             else:
-                page = messagehtml % ('danger', 'Looks like you got bad link :(')
+                page = messagehtml % (
+                    'danger', 'Looks like you got bad link :(')
             return page
         except SQLException as e:
             raise e
-
 
     def logout(self):
         cuser = self.checkAuth()[0]
@@ -252,9 +253,9 @@ class myHandler(BaseHTTPRequestHandler):
             del sessions[computeMD5hash(self.cookie['AToken'])]
         else:
             page = base % ('', messagehtml % ('danger', "<center><figure class=\"figure\">"
-                                                       "<img src=\"http://share.mostmodest.ru/2017/02/H2hgPCa.png\" class=\"figure-img img-fluid rounded\" alt=\"meme\">"
-                                                       "<figcaption class=\"figure-caption\">You cant logout if you are not logged in.</figcaption>"
-                                                       "</figure></center>"), version, '0')
+                                              "<img src=\"http://share.mostmodest.ru/2017/02/H2hgPCa.png\" class=\"figure-img img-fluid rounded\" alt=\"meme\">"
+                                              "<figcaption class=\"figure-caption\">You cant logout if you are not logged in.</figcaption>"
+                                              "</figure></center>"), version, '0')
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
@@ -275,9 +276,12 @@ class myHandler(BaseHTTPRequestHandler):
                             table = table + links_adminmenu % (
                                 i['email'],
                                 i['permissions'],
-                                "<a href='adminmenu?user=%s' class='btn btn-info btn-sm'>User</a>" % (i['email']),
-                                "<a href='adminmenu?moder=%s' class='btn btn-info btn-sm'>Moderator</a>" % (i['email']),
-                                "<a href='adminmenu?admin=%s' class='btn btn-info btn-sm'>Administrator</a>" % (i['email'])
+                                "<a href='adminmenu?user=%s' class='btn btn-info btn-sm'>User</a>" % (
+                                    i['email']),
+                                "<a href='adminmenu?moder=%s' class='btn btn-info btn-sm'>Moderator</a>" % (
+                                    i['email']),
+                                "<a href='adminmenu?admin=%s' class='btn btn-info btn-sm'>Administrator</a>" % (
+                                    i['email'])
                             )
                         page = adminmenu % (table)
 
@@ -285,26 +289,34 @@ class myHandler(BaseHTTPRequestHandler):
                     try:
                         if self.cdb.checkPermission(cuser, database.ADMIN_LEVEL):
                             for i in self.cdb.getAllUsers():
-                                if i['permissions']>=database.MOD_LEVEL:
+                                if i['permissions'] >= database.MOD_LEVEL:
                                     table = table + links_adminmenu % (
                                         i['email'],
                                         i['permissions'],
-                                        "<a href='adminmenu?user=%s' class='btn btn-info btn-sm'>User</a>" % (i['email']),
-                                        "<a href='adminmenu?moder=%s' class='btn btn-info btn-sm'>Moderator</a>" % (i['email']),
+                                        "<a href='adminmenu?user=%s' class='btn btn-info btn-sm'>User</a>" % (
+                                            i['email']),
+                                        "<a href='adminmenu?moder=%s' class='btn btn-info btn-sm'>Moderator</a>" % (
+                                            i['email']),
                                         ""
                                     )
                             page = adminmenu % (table)
                     except MissingPermission as ex:
                         raise ex
             elif 'user' in parsed:
-                self.cdb.upgradePermis(cuser, parsed['user'], database.USER_LEVEL)
-                page = messagehtml % ('success', 'User '+ parsed['user']+' is now user')
+                self.cdb.upgradePermis(
+                    cuser, parsed['user'], database.USER_LEVEL)
+                page = messagehtml % (
+                    'success', 'User ' + parsed['user']+' is now user')
             elif 'moder' in parsed:
-                self.cdb.upgradePermis(cuser, parsed['moder'], database.MOD_LEVEL)
-                page = messagehtml % ('success', 'User '+ parsed['moder']+' is now Moderator')
+                self.cdb.upgradePermis(
+                    cuser, parsed['moder'], database.MOD_LEVEL)
+                page = messagehtml % (
+                    'success', 'User ' + parsed['moder']+' is now Moderator')
             elif 'admin' in parsed:
-                self.cdb.upgradePermis(cuser, parsed['admin'], database.ADMIN_LEVEL)
-                page = messagehtml % ('success', 'User '+ parsed['admin']+' is now Administrator')
+                self.cdb.upgradePermis(
+                    cuser, parsed['admin'], database.ADMIN_LEVEL)
+                page = messagehtml % (
+                    'success', 'User ' + parsed['admin']+' is now Administrator')
             return page
         else:
             raise BadUser("You have to log in to use this Page")
@@ -340,7 +352,8 @@ class myHandler(BaseHTTPRequestHandler):
                     else:
                         plid = int(parsed['allow'])
                         self.cdb.allowPlugin(cuser, plid)
-                        page = messagehtml % ('success', 'Plugin was approved!')
+                        page = messagehtml % (
+                            'success', 'Plugin was approved!')
                 else:
                     raise MissingPermission("Moderator")
             else:
@@ -427,10 +440,12 @@ class myHandler(BaseHTTPRequestHandler):
                             uplg.append(plug)
                 for plugin in uplg:
                     table = table + \
-                        links_mng % (plugin['name'], plugin['added'], item, item)
+                        links_mng % (
+                            plugin['name'], plugin['added'], item, item)
                 return managepage % table
             else:
-                raise BadUser('You cant manage your plugins because you are not logged in')
+                raise BadUser(
+                    'You cant manage your plugins because you are not logged in')
         except MissingPermission as ex:
             raise ex
 
@@ -550,7 +565,6 @@ class myHandler(BaseHTTPRequestHandler):
     def index(self):
         table = ""
         isSearch = False
-        path = self.path[1:]
         parsed = parseURL(self.path)
         count = 0
         for item in self.cdb.getApproved():
@@ -566,10 +580,13 @@ class myHandler(BaseHTTPRequestHandler):
             elif item['compatible'] == 'o3ds':
                 cpbicon = iold
             table = table + links % (
+                count,
+                item['name'],
+                item["desc"].replace('\r', ''),
                 item['pic'],
                 item["name"],
                 "For " + name,
-                item["desc"],
+                count,
                 item['plg'],
                 item['devsite'],
                 cpbicon,
@@ -577,7 +594,7 @@ class myHandler(BaseHTTPRequestHandler):
             )
         if count == 0:
             table = "<center><h3>No items :(</h3></center>"
-        page = index % (count,table)
+        page = index % (count, table)
         return page
 
     def description(self):
@@ -698,7 +715,7 @@ class myHandler(BaseHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(darktheme)
                 elif self.path.startswith('/error'):
-                    1 / 0 #LIKE
+                    1 / 0  # LIKE
                 elif self.path.startswith('/rm'):
                     page = self.rm()
                 elif self.path.startswith('/adminmenu'):

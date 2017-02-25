@@ -21,8 +21,8 @@ except Exception as e:
 print("Starting server.")
 server = Popen(['python3', 'main.py', '--tests', 'True'],
                stdin=PIPE)
-print("Sleeping 10 seconds to wait init")
-sleep(10)
+print("Sleeping 20 seconds to wait init")
+sleep(20)
 print("Checking index page...")
 if 'WELCOME TO NTR PLUGIN DATABASE' in str(urlopen('http://127.0.0.1:8080/index').read(), 'utf-8').upper():
     print("Index is OK")
@@ -30,7 +30,7 @@ else:
     print("Index have problems!")
     errcounter = errcounter + 1
 print("Logging in as admin...")
-url = 'http://127.0.0.1/login'
+url = 'http://127.0.0.1:8080/login'
 data = urlencode({'rtype': 'loginpg',
                   'email': 'test@test.test',
                   'pword': 'test'
@@ -45,6 +45,4 @@ else:
     print("Havent received cookie!")
     print("LOGIN:FAIL")
     errcounter = errcounter + 1
-if cookie:
-    print("Trying to add item.")
 server.kill()

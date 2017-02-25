@@ -582,7 +582,7 @@ class myHandler(BaseHTTPRequestHandler):
             table = table + links % (
                 count,
                 item['name'],
-                item["desc"].replace('\r', ''),
+                item["desc"].replace('\n', '<br>'),
                 item['pic'],
                 item["name"],
                 "For " + name,
@@ -650,6 +650,7 @@ class myHandler(BaseHTTPRequestHandler):
         self.wfile.write(bytes(json.dumps(apidata), 'utf-8'))
 
 ###########################httplib zone########################################
+
 
     def do_GET(self):
         timer_start = time()

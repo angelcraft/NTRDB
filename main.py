@@ -835,9 +835,9 @@ if count == 0:
 
 try:
     if port:
-        server = ThreadedHTTPServer(('', port), myHandler)
+        server = ThreadedHTTPServer(('127.0.0.1', port), myHandler)
     else:
-        server = ThreadedHTTPServer(('', 8080), myHandler)
+        server = ThreadedHTTPServer(('127.0.0.1', 8080), myHandler)
 
     print('Started httpserver')
 

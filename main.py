@@ -25,9 +25,11 @@ import database
 parser = argparse.ArgumentParser()
 parser.add_argument('-p', '--port', type=int,
                     help='Port for receiving requests', required=False)
+parser.add_argument('--tests', type=bool,
+                    help='This is passed when tests happen', required=False)
 args = parser.parse_args()
 port = args.port
-
+tests = args.tests
 titles = ET.fromstring(
     str(urlopen('http://3dsdb.com/xml.php').read(), 'utf-8'))
 print("3DSDB loaded, optimising it...")
@@ -36,8 +38,6 @@ for item in titles:
     tids.append([item[1].text, item[8].text])
 del titles
 print("DONE!")
-print("Checking DB for required keys...")
-
 version = str(
     check_output('git log -n 1 --pretty=format:"%h"', shell=True), 'utf-8')
 sessions = {}
@@ -843,8 +843,12 @@ count = 0
 for i in db.getAllPermissionUsers(database.OWNER_LEVEL):
     count += 1
 if count == 0:
-    mail = input("Owner email: ")
-    passwd = input("Owner Password: ")
+    if not tests:
+        mail = input("Owner email: ")
+        passwd = input("Owner Password: ")
+    else:
+        mail = 'test@test.test'
+        passwd = 'test'
     db.createOwner(mail, passwd)
     del mail
     del passwd

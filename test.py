@@ -21,7 +21,8 @@ except Exception as e:
     pass
 print("Starting server.")
 server = Popen(['python3', 'main.py', '--tests', 'True'],
-               stdin=PIPE)
+               stdin=PIPE,
+               stdout=DEVNULL)
 print("Sleeping 20 seconds to wait init")
 sleep(20)
 print("Checking index page...")

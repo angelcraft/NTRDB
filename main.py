@@ -477,13 +477,14 @@ class myHandler(BaseHTTPRequestHandler):
                             message = "You havent entered path to plg file!"
                             badreq = True
                             succ = False
-                        if titleid == "":
-                            titleid = "Not game"
-                        for item in titleid:
-                            if not len(item) == 16:
-                                message = "You entered bad TitleID!"
-                                badreq = True
-                                succ = False
+                        if titleid_str == "":
+                            titleid_str = "Not game"
+                        else:
+                            for item in titleid:
+                                if not len(item) == 16:
+                                    message = "One of TitleIDs is invalid!"
+                                    badreq = True
+                                    succ = False
                         if plugname == "":
                             message = "You havent entered plugin's name!"
                             badreq = True

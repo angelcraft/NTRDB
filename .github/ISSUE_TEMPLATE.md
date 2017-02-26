@@ -10,5 +10,5 @@ What should have happend?
 
 What really happend?
 
-## Error box(if it web side issue and site shows Report Bug screen)
+## Error box data(if site shows Error page)
 

@@ -4,42 +4,42 @@
   <span for="id">Plugin name</span>
   <div class="input-group mb-2 mr-sm-2 mb-sm-0">    
     <div class="input-group-addon"><i class="fa fa-i-cursor" aria-hidden="true"></i></div>
-    <input type="text" class="form-control" id="name" name="name" required placeholder="Cool NTR plugin!">
+    <input type="text" class="form-control" id="name" name="name" required placeholder="Cool NTR plugin!" value="%s">
   </div>
   <span for="desc">Description</span>
   <div class="input-group mb-2 mr-sm-2 mb-sm-0">  
     <div class="input-group-addon"><i class="fa fa-info" aria-hidden="true"></i></div>
-    <textarea class="form-control" rows="3" id="desc" name="desc" required=""></textarea>
+    <textarea class="form-control" rows="3" id="desc" name="desc" required="" value="%s"></textarea>
   </div>
   <span for="version">Version(numbers only)</span>
   <div class="input-group mb-2 mr-sm-2 mb-sm-0">  
     <div class="input-group-addon"><i class="fa fa-code-fork" aria-hidden="true"></i></div>
-    <input type="text" class="form-control" id="version" name="ver" placeholder="0" required="" pattern="^[ 0-9]+$">
+    <input type="text" class="form-control" id="version" name="ver" placeholder="0" required="" pattern="^[ 0-9]+$" value="%s">
   </div>
   <span for="developer">Developer name</span>
   <div class="input-group mb-2 mr-sm-2 mb-sm-0">  
     <div class="input-group-addon"><i class="fa fa-user" aria-hidden="true"></i></div>
-    <input type="text" class="form-control" id="developer" name="developer" placeholder="Developer", required>
+    <input type="text" class="form-control" id="developer" name="developer" placeholder="Developer" required value="%s">
   </div>
-  <span for="tid">Game's TitleID(16 symbols long, optional if there is none the game will show up as Not Game)</span>
+  <span for="tid">Game's TitleID(16 symbols long, separate by <code>;</code>, optional if there is none the game will show up as Not Game)</span>
   <div class="input-group mb-2 mr-sm-2 mb-sm-0">
     <div class="input-group-addon"><i class="fa fa-gamepad" aria-hidden="true"></i></div>  
-    <input type="text" class="form-control" id="tid" name="tid" placeholder="000400000017C300">
+    <input type="text" class="form-control" id="tid" name="tid" placeholder="000400000017C300" value="%s">
   </div>
   <span for="site">Site or forum thread of plugin</span>
   <div class="input-group mb-2 mr-sm-2 mb-sm-0">  
     <div class="input-group-addon"><i class="fa fa-link" aria-hidden="true"></i></div>
-    <input type="text" class="form-control" id="site" name="devsite" placeholder="http://example.com/" required="">
+    <input type="text" class="form-control" id="site" name="devsite" placeholder="http://example.com/" required="" value="%s">
   </div>
   <span for="link">Download link(direct to .plg file)</span>
   <div class="input-group mb-2 mr-sm-2 mb-sm-0">  
     <div class="input-group-addon"><i class="fa fa-download" aria-hidden="true"></i></div>
-    <input type="text" class="form-control" id="link" name="link" placeholder="http://example.com/example.plg" required>
+    <input type="text" class="form-control" id="link" name="link" placeholder="http://example.com/example.plg" required value="%s">
   </div>
   <span for="id">Picture(optional, static link)</span>
   <div class="input-group mb-2 mr-sm-2 mb-sm-0">  
     <div class="input-group-addon"><i class="fa fa-picture-o" aria-hidden="true"></i></div>
-    <input type="text" class="form-control" id="pic" name="pic" placeholder="http://example.com/example.png">
+    <input type="text" class="form-control" id="pic" name="pic" placeholder="http://example.com/example.png" value="%s">
   </div>
   Select an compatible 3DS version for that plugin:
   <div class="form-check">

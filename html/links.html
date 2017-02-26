@@ -9,15 +9,35 @@
 </td>
 </tr>
 -->
-<div class="card" width='256'>
-	<img class="card-img-top" src="%s" alt="Card image cap" style="width:256px;height: 180px">
+
+<div class="modal fade" id="plugdesc%s" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLongTitle">Description of %s</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        %s
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-block" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card wow slideInUp">
+	<img class="card-img-top img-fluid" src="%s" alt="Card image cap" style="height: 180px">
 	<div class="card-block">
 	  <h4 class="card-title">%s</h4>
 	  <p class="card-title">%s</p>
-	  <p class="card-text">%s</p>
-	  <ul class="list-group list-group-flush">
+	  <ul class="list-group list-group-flush" style="">
+	  	<li class="list-group-item"><a href="#" onclick="$('#plugdesc%s').modal('toggle')"><i class="fa fa-info fa-fw" aria-hidden="true"></i> Show description</a></li>
 	    <li class="list-group-item"><a href="%s"><i class="fa fa-download fa-fw" aria-hidden="true"></i> Download</a></li>
-	    <li class="list-group-item"><a href="%s"><i class="fa fa-link fa-fw" aria-hidden="true"></i> Site</a></li>
+	    <li class="list-group-item"><a href="%s"><i class="fa fa-chain fa-fw" aria-hidden="true"></i> Site</a></li>
 	  </ul>
 	</div>
 	  <div class="card-footer">

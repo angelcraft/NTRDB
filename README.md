@@ -1,11 +1,11 @@
 # NTRDB
 ## NTR plugins database
-
+[![Build Status](https://travis-ci.org/OctoNezd/NTRDB.svg?branch=master)](https://travis-ci.org/OctoNezd/NTRDB)
 ### API
 
-There is an sorta API which you can access through octonezd.pw/api
+There is an sorta API which you can access through ntrdb.octonezd.pw/api
 
 Example output of api:
 ```
-{"1": {"plg": "http://github.com", "name": "Lorem", "timestamp": 1487174960.427341, "TitleID": "0000000000000000", "added": "2017-02-15 19:09"}, "2": {"plg": "http://github.com/i", "name": "Ipsum", "timestamp": 1487174975.194795, "TitleID": "0000000000000000", "added": "2017-02-15 19:09"}, "3": {"plg": "http://google.com", "name": "Dolor", "timestamp": 1487174999.214586, "TitleID": "0000000000000000", "added": "2017-02-15 19:09"}, "4": {"plg": "http://ya.ru", "name": "Sit", "timestamp": 1487175018.290336, "TitleID": "0000000000000001", "added": "2017-02-15 19:10"}}
+[{"id": 1, "timestamp": 1487517949.052672, "compatible": "universal", "TitleID": "0004000000198E00", "added": "2017-02-19 18:25", "developer": "RyDog199", "version": "3", "name": "Animal Crossing: New Leaf Cheat-Menu", "desc": "This cheat-menu includes:\r\n\r\n1. Text to Item\r\n2. Duplication\r\n3. Moon Jump\r\n4. Coordinates Modifier\r\n5. Teleport\r\n6. Speed Hack\r\n7. Seeder (Set, Destroy, Undo)\r\n8. Search and Replace\r\n9. Instant Tree\r\n10. Destroy All Weeds\r\n11. Water All Flowers\r\n12. Grass\r\n13. Desert\r\n14. Nookling Upgrades\r\n15. Tan Modifier\r\n16. Real Time World Edit\r\n17. Time Travel\r\n18. Time Machine", "pic": "http://rydog199.github.io/images/animal.png", "plg": "https://github.com/RyDog199/ACNL-NTR-Cheats/releases/download/v3.2.1/ACNL_MULTI.plg", "devsite": "https://gbatemp.net/threads/release-animal-crossing-new-leaf-multi-cheat-ntr-plugin.428522/"}, {"id": 2, "timestamp": 1487523508.573614, "compatible": "universal", "TitleID": "0004000000164800;0004000000175E00", "added": "2017-02-19 19:58", "developer": "zaksabeast", "version": "023", "name": "pokeCalcNTR", "desc": "pokeCalcNTR is a powerful Gen 7 RNG tool that brings emulator type functions to the console", "pic": "https://gbatemp.net/attachments/fc0jv4a-png.78703/", "plg": "https://github.com/adrifcastr/NTRDB-Plugin-Host/blob/master/pokeCalcNTR.plg?raw=true", "devsite": "https://gbatemp.net/threads/wip-pokecalcntr-iv-and-nature-overlay-plugin-for-sun-and-moon.460524/"}, {"id": 4, "timestamp": 1487537065.384168, "compatible": "universal", "TitleID": "0004000000179800", "added": "2017-02-19 23:44", "developer": "Kreygasm, Necrojinsei, Kozy", "version": "1", "name": "Fire Emblem: Fates Special Edition USA Cheat Plugin", "desc": "Fire Emblem: Fates Special Edition USA Cheat Plugin", "pic": "https://puu.sh/uaCyY/3342c8bb28.png", "plg": "http://www.mediafire.com/download/hhf119sw6x11oyb/FE+Fates+Cheat.plg", "devsite": "https://gbatemp.net/threads/request-fire-emblem-fates-special-edition-usa-cheat-plugin.415563"}]
 ```

@@ -2,6 +2,8 @@ language: python
 python:
   - "3.4"
 # command to install dependencies
-install: "pip install -r req.txt"
+install: 
+  - pip install -r req.txt
+  - pip install pytest
 # command to run tests
-script: pytest
+script: python3 -m pytest

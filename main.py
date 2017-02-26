@@ -375,7 +375,7 @@ class myHandler(BaseHTTPRequestHandler):
                 plgp = parsed["link"]
                 titleid_str = parsed['tid'].upper()
                 titleid = parsed['tid'].upper().split(';')
-                print(titleid)
+                #print(titleid)
                 plugname = parsed['name']
                 developer = parsed['developer']
                 devsite = parsed['devsite']
@@ -445,7 +445,8 @@ class myHandler(BaseHTTPRequestHandler):
                         if plug:
                             uplg.append(plug)
                 for plugin in uplg:
-                    print(plugin)
+                    plugin = self.cdb.getPlugin(pid=plugin)
+                    item = plugin['id']
                     table = table + \
                         links_mng % (
                             plugin['name'], plugin['added'], item, item)
@@ -791,7 +792,7 @@ class myHandler(BaseHTTPRequestHandler):
                 linecache.checkcache(filename)
                 line = linecache.getline(filename, lineno, f.f_globals)
                 errorinfo = "File: %s<br>Line: %s<br>Error: %s" % (
-                    filename, lineno, str(e)
+                    filename, lineno, type(e).__name__
                     )
                 self.send_response(500)
                 self.send_header('Content-type', 'text/html')

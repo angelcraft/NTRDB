@@ -21,7 +21,7 @@ try:
 except Exception as e:
     pass
 print("Starting server.")
-server = Popen(['python3', 'main.py', '--tests', 'True'],
+server = Popen(['python3', 'main.py', '--tests', 'True', '-p', '8080'],
                stdin=PIPE,
                stdout=DEVNULL,
                stderr=DEVNULL)
@@ -32,10 +32,10 @@ try:
     if 'WELCOME TO NTR PLUGIN DATABASE' in str(urlopen('http://127.0.0.1:8080/index').read(), 'utf-8').upper():
         print("Index:OK")
     else:
-        print("Index:FAIL")
+        print("Index:FAIL(wrong page)")
         errcounter = errcounter + 1
-except HTTPError:
-    print("Index:FAIL(server returned non-200)")
+except HTTPError as e:
+    print("Index:FAIL(server returned non-200 statuscode:%s)" % (e.code))
     errcounter = errcounter + 1
 print("Logging in as admin...")
 url = 'http://127.0.0.1:8080/login'
@@ -45,16 +45,25 @@ data = urlencode({'rtype': 'loginpg',
                   }).encode('utf-8')
 try:
     content = urlopen(url=url, data=data)
-except HTTPError:
-    print("Login:FAIL")
+except HTTPError as e:
+    print("Login:FAIL(non-200 status code:%s)" % (e.code))
+    print("The next tests wont happen: Add, Edit, Remove, Logout")
 else:
-    cookies = parseCookie(content.getheader('Set-Cookie'))
+    cookies = content.getheader('Set-Cookie')
     if 'AToken' in cookies:
         print("Login:OK")
-        cookie = cookies['AToken']
+        opener = build_opener()
+        opener.addheaders.append(('Cookie', cookies))
+        try:
+            addtest = opener.open('http://127.0.0.1:8080/additem?name=Test+plugin&desc=Test&ver=0&developer=Developer&tid=00040000001A3200%3B00040000001A4100&devsite=http%3A%%2F%%2Fexample.com&link=http%3A%%2F%%2Fexample.com%%2Fplg&pic=&ctype=universal&add=1')
+        except HTTPError as e:
+            print("Add:FAIL(non-200 status code:%s" % e.code)
+            errcounter = errcounter + 1
+        else:
+            print("Add:OK")
     else:
-        print("Havent received cookie!")
-        print("Login:FAIL")
+        print("Login:FAIL(No cookies received)")
+        print("The next tests wont happen: Add, Edit, Remove, Logout")
         errcounter = errcounter + 1
 server.kill()
 if errcounter == 0:

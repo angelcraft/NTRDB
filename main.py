@@ -23,7 +23,7 @@ from custom_exception import MissingPermission, SQLException, BadUser, Banned
 import database
 
 ##################################config vairables########################
-MAX_STIKES = 6
+
 ##########################################################################
 
 parser = argparse.ArgumentParser()
@@ -347,7 +347,7 @@ class myHandler(BaseHTTPRequestHandler):
             if cuser:
                 if self.cdb.checkPermission(cuser):
                     parsed = parseURL(self.path)
-                    if not 'allow' in parsed:
+                    if not parsed:
                         for item in self.cdb.getModPlugins():
                             if not item["TitleID"] == "Not game":
                                 name = getgamebytid(item["TitleID"])
@@ -362,14 +362,20 @@ class myHandler(BaseHTTPRequestHandler):
                                 item['devsite'],
                                 item['id'],
                                 item['id'],
+                                item['id'],
                                 item['id']
                             )
                         page = mod % (table)
-                    else:
+                    elif 'allow' in parsed:
                         plid = int(parsed['allow'])
                         self.cdb.allowPlugin(cuser, plid)
                         page = messagehtml % (
                             'success', 'Plugin was approved!')
+                    elif 'strike' in parsed:
+                        plid = int(parsed['strike'])
+                        self.cdb.strikeUser(cuser, plid)
+                        page = messagehtml % (
+                            'info', "The Plugin's uploader will recieve a strike")
                 else:
                     raise MissingPermission("Moderator")
             else:
@@ -696,9 +702,12 @@ class myHandler(BaseHTTPRequestHandler):
             elif luser["permissions"] <= database.MOD_LEVEL:
                 nbar = nbar_loggedin % (
                     cuser, '<a class="dropdown-item" href="mod">Moderation</a>', '')
-            else:
+            elif luser["permissions"] <= database.USER_LEVEL:
                 nbar = nbar_loggedin % (
                     cuser, '', '')
+            elif luser["permissions"] <= database.BAN_LEVEL:
+                page = self.logout()
+                speccall = True
         else:
             nbar = nbar_login
         if not rcookies:

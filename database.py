@@ -5,6 +5,10 @@ from custom_exception import MissingPermission, SQLException, BadUser, Banned
 import hashlib
 from uuid import uuid4
 
+#####################################config Variables########################################
+
+MAX_STIKES = 6
+
 PLUGIN_INFO = {'id': False,
                'TitleID': True,
                'name': True,
@@ -35,7 +39,7 @@ ADMIN_LEVEL = 1
 MOD_LEVEL = 2
 USER_LEVEL = 3
 BAN_LEVEL = 4
-
+#######################################module#############################################
 
 class database():
     db = None
@@ -144,7 +148,7 @@ class database():
         admin = self.getUser(user)
         plugin = self.getPlugin(pid=pid)
         if plugin != None:
-            if admin['permissions'] <= ADMIN_LEVEL or plugin['uploader'] == admin['email']:
+            if admin['permissions'] <= ADMIN_LEVEL or plugin['uploader'] == admin['email'] or (admin['permissions']<=MOD_LEVEL and not plugin['approved']):
                 user = self.getUser(email=plugin["uploader"])
                 del user["plugins"][user["plugins"].index(pid)]
                 self.setUser(user)
@@ -270,6 +274,7 @@ class database():
                 ban['banned']=True
                 ban['permissions']=BAN_LEVEL
                 self.setUser(ban)
+                return True
             else:
                 raise SQLException("User")
         else:
@@ -282,7 +287,22 @@ class database():
         else:
             return False
 
-
+    def strikeUser(self, user, toStr):
+        user = self.getUser(email=user)
+        if user['permissions']<=MOD_LEVEL:
+            strike = self.getUser(email=self.getPlugin(pid=toStr)['uploader'])
+            if strike!=None:
+                strike['strikes']+=1
+                if strike['strikes']>=MAX_STIKES:
+                    strike['banned']=True
+                    strike['permissions']=BAN_LEVEL
+                self.setUser(strike)
+                self.removePlugin(user['email'], toStr)
+                return True
+            else:
+                raise SQLException("Plugin's creator")
+        else:
+            raise MissingPermission("Moderator")
 ######################################specific Getters and setters########
 #-----------------------------Users------------------------------------#
     def getUser(self, email):

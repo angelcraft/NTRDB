@@ -603,6 +603,8 @@ class myHandler(BaseHTTPRequestHandler):
                 item['name'],
                 item["desc"].replace('\n', '<br>'),
                 pic,
+                count,
+                pic,
                 item["name"],
                 name,
                 count,

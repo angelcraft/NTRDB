@@ -47,7 +47,7 @@ try:
     content = urlopen(url=url, data=data)
 except HTTPError as e:
     print("Login:FAIL(non-200 status code:%s)" % (e.code))
-    print("The next tests wont happen: Add, Edit, Remove, Logout")
+    print("The next tests wont happen: Add, Edit, Remove")
 else:
     cookies = content.getheader('Set-Cookie')
     if 'AToken' in cookies:
@@ -55,15 +55,43 @@ else:
         opener = build_opener()
         opener.addheaders.append(('Cookie', cookies))
         try:
-            addtest = opener.open('http://127.0.0.1:8080/additem?name=Test+plugin&desc=Test&ver=0&developer=Developer&tid=00040000001A3200%3B00040000001A4100&devsite=http%3A%%2F%%2Fexample.com&link=http%3A%%2F%%2Fexample.com%%2Fplg&pic=&ctype=universal&add=1')
+            addtest = opener.open(
+                'http://127.0.0.1:8080/additem?name=Test+plugin&desc=Test&ver=0&developer=Developer&tid=00040000001A3200%3B00040000001A4100&devsite=http%3A%2F%2Fexample.com&link=http%3A%2F%2Fexample.com%2Fplg&pic=&ctype=universal&add=1')
         except HTTPError as e:
             print("Add:FAIL(non-200 status code:%s" % e.code)
             errcounter = errcounter + 1
         else:
-            print("Add:OK")
+            if 'Your plugin were added to base. Now you need to wait for moderator to approve it.' in str(addtest.read(), 'utf-8'):
+                print("Add:OK")
+                try:
+                    edittest = opener.open(
+                        'http://127.0.0.1:8080/edit?edit=1&plugid=1&name=Test+plugin+edited&desc=Test&ver=0&developer=Developer&tid=00040000001A3200%3B00040000001A4100&devsite=http%3A%2F%2Fexample.com&link=http%3A%2F%2Fexample.com%2Fplg&pic=&ctype=universal&add=1')
+                except HTTPError as e:
+                    print("Edit:FAIL(non-200 status code: %s)" % (e.code))
+                    errcounter = errcounter + 1
+                else:
+                    if "Your plugin was edited successfully" in str(edittest.read(), 'utf-8'):
+                        print("Edit:OK")
+                    else:
+                        print("Edit:FAIL(wrong page received)")
+                        errcounter = errcounter + 1
+                try:
+                    rmtest = opener.open('http://127.0.0.1:8080/rm?plugid=1&sure=1')
+                except HTTPError as e:
+                    print("Remove:FAIL(non-200 status code:%s)" % (e.code))
+                    errcounter = errcounter + 1
+                else:
+                    if 'Your plugin was removed' in str(rmtest.read(), 'utf-8'):
+                        print("Remove:OK")
+                    else:
+                        print("Remove:FAIL(bad page)")
+            else:
+                print("Add:FAIL(wrong page received)")
+                errcounter = errcounter + 1
+            
     else:
         print("Login:FAIL(No cookies received)")
-        print("The next tests wont happen: Add, Edit, Remove, Logout")
+        print("The next tests wont happen: Add, Edit, Remove")
         errcounter = errcounter + 1
 server.kill()
 if errcounter == 0:

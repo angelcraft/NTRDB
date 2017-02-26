@@ -1,13 +1,14 @@
+import linecache
 import smtplib
 from email.mime.text import MIMEText
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from os.path import exists
+#from os.path import exists
 import datetime
 from urllib.parse import unquote
 import json
 import hashlib
 from socketserver import ThreadingMixIn
-import threading
+#import threading
 from subprocess import check_output
 import xml.etree.ElementTree as ET
 from html import escape
@@ -18,7 +19,8 @@ from validators import url, email
 from time import time
 import argparse
 from loader import *
-import dataset
+#import dataset
+from sys import exc_info
 from custom_exception import MissingPermission, SQLException, BadUser
 import database
 
@@ -781,15 +783,23 @@ class myHandler(BaseHTTPRequestHandler):
                 raise mp
             except Exception as e:
                 timer_stop = time()
+                exc_type, exc_obj, tb = exc_info()
+                f = tb.tb_frame
+                lineno = tb.tb_lineno
+                filename = f.f_code.co_filename
+                linecache.checkcache(filename)
+                line = linecache.getline(filename, lineno, f.f_globals)
+                errorinfo = "File: %s<br>Line: %s<br>Error: %s" % (
+                    filename, lineno, str(e)
+                    )
                 self.send_response(500)
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
-                page = base % (nbar, messagehtml %
-                               ('danger',
-                                'Oops! An error occured when processing your request!'),
+                page = base % (nbar, error %
+                               (errorinfo,
+                                ),
                                version, str(timer_stop - timer_start))
                 self.wfile.write(bytes(page, 'utf-8'))
-                raise e
 
     def do_POST(self):
         timer_start = time()

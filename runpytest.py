@@ -15,7 +15,7 @@ while 1:
     try:
         urlopen('http://127.0.0.1:8080')
     except Exception:
-        sleep(0.5)
+        sleep(0.01)
         try:
             server.wait(0.1)
         except TimeoutExpired:

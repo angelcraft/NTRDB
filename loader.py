@@ -1,6 +1,8 @@
 from base64 import b64encode
 with open('resources/favicon.png', 'rb') as f:
     icon = f.read()
+with open('html/error.html') as f:
+    error = f.read()
 with open('html/index.html') as f:
     index = f.read()
 with open('html/desc.html') as f:

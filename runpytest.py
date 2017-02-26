@@ -1,6 +1,5 @@
 from subprocess import Popen, PIPE, DEVNULL, TimeoutExpired, call
-from urllib.request import urlopen
-from urllib.error import HTTPError, URLError
+from urllib.request import urlopenS
 from os import remove, system
 from os.path import exists
 from time import sleep
@@ -23,7 +22,7 @@ while 1:
             pass
         else:
             print("Server hasnt started up properly!")
-            exit('Server error!')
+            exit('Tests blacked out!')
     else:
         print("Server started! Beggining tests!")
         break

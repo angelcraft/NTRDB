@@ -4,6 +4,16 @@ from urllib.error import HTTPError
 import exceptions
 
 
+def test_reg():
+    url = 'http://127.0.0.1:8080/reg'
+    data = urlencode({'rtype': 'regpg',
+                      'email': 'test2@test.test',
+                      'pword': 'test2'
+                      }).encode('utf-8')
+    content = urlopen(url=url, data=data)
+    assert True
+
+
 def test_login():
     url = 'http://127.0.0.1:8080/login'
     data = urlencode({'rtype': 'loginpg',

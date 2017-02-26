@@ -1,4 +1,6 @@
 from subprocess import Popen, PIPE, DEVNULL, TimeoutExpired, call
+from urllib.request import urlopen
+from urllib.error import HTTPError, URLError
 from os import remove, system
 from os.path import exists
 from time import sleep
@@ -9,14 +11,24 @@ server = Popen(['python3', 'main.py', '--tests', 'True', '-p', '8080'],
                stdin=PIPE,
                stdout=DEVNULL,
                stderr=DEVNULL)
-print("Waiting 10 seconds to init server fully")
-sleep(10)
-try:
-    server.wait(1)
-except TimeoutExpired:
-    retval = None
-    retval = call(['python3', '-m', 'pytest'])
-    server.kill()
-    exit(retval)
-else:
-    exit('Server error!')
+print("Waiting init of server")
+while 1:
+    try:
+        urlopen('http://127.0.0.1:8080')
+    except Exception:
+        sleep(0.5)
+        try:
+            server.wait(0.1)
+        except TimeoutExpired:
+            pass
+        else:
+            print("Server hasnt started up properly!")
+            exit('Server error!')
+    else:
+        print("Server started! Beggining tests!")
+        break
+
+retval = None
+retval = call(['python3', '-m', 'pytest'])
+server.kill()
+exit(retval)

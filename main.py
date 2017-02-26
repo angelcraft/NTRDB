@@ -608,6 +608,8 @@ class myHandler(BaseHTTPRequestHandler):
                 pic,
                 item["name"],
                 name,
+                item['version'],
+                item['developer'],
                 count,
                 item['plg'],
                 item['devsite'],

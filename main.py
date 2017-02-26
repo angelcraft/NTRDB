@@ -581,7 +581,7 @@ class myHandler(BaseHTTPRequestHandler):
         for item in self.cdb.getApproved():
             count = count + 1
             name = "For "
-            print(item["TitleID"])
+            #print(item["TitleID"])
             if not item["TitleID"] == "Not game":
                 for game in item["TitleID"].split(";"):
                     name = name + getgamebytid(game) + ', '

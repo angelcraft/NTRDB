@@ -852,7 +852,6 @@ if count == 0:
     db.createOwner(mail, passwd)
     del mail
     del passwd
-
 try:
     if port:
         server = ThreadedHTTPServer(('127.0.0.1', port), myHandler)

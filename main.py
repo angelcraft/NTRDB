@@ -1,13 +1,14 @@
+import linecache
 import smtplib
 from email.mime.text import MIMEText
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from os.path import exists
+#from os.path import exists
 import datetime
 from urllib.parse import unquote
 import json
 import hashlib
 from socketserver import ThreadingMixIn
-import threading
+#import threading
 from subprocess import check_output
 import xml.etree.ElementTree as ET
 from html import escape
@@ -18,7 +19,8 @@ from validators import url, email
 from time import time
 import argparse
 from loader import *
-import dataset
+#import dataset
+from sys import exc_info
 from custom_exception import MissingPermission, SQLException, BadUser, Banned
 import database
 
@@ -395,6 +397,7 @@ class myHandler(BaseHTTPRequestHandler):
                 plgp = parsed["link"]
                 titleid_str = parsed['tid'].upper()
                 titleid = parsed['tid'].upper().split(';')
+                #print(titleid)
                 plugname = parsed['name']
                 developer = parsed['developer']
                 devsite = parsed['devsite']
@@ -464,6 +467,8 @@ class myHandler(BaseHTTPRequestHandler):
                         if plug:
                             uplg.append(plug)
                 for plugin in uplg:
+                    plugin = self.cdb.getPlugin(pid=plugin)
+                    item = plugin['id']
                     table = table + \
                         links_mng % (
                             plugin['name'], plugin['added'], plugin['id'], plugin['id'])
@@ -598,6 +603,7 @@ class myHandler(BaseHTTPRequestHandler):
         for item in self.cdb.getApproved():
             count = count + 1
             name = "For "
+            #print(item["TitleID"])
             if not item["TitleID"] == "Not game":
                 for game in item["TitleID"].split(";"):
                     name = name + getgamebytid(game) + ', '
@@ -634,14 +640,14 @@ class myHandler(BaseHTTPRequestHandler):
 
     def description(self):
         parsed = parseURL(self.path)
-        if "id" in parsed:
-            gid = int(parsed["id"])
+        if "pid" in parsed:
+            gid = int(parsed["pid"])
             cuser, _ = self.checkAuth()
             luser = self.cdb.getUser(email=cuser)
             try:
                 if self.cdb.checkPermission(cuser, database.ADMIN_LEVEL):
                     options = 'Options:<a href="edit?plugid=%s" class="btn btn-secondary btn-sm">Edit</a><a href="rm?plugid=%s" class="btn btn-danger btn-sm">Remove</a>' % (
-                        parsed['id'], parsed['id'])
+                        parsed['pid'], parsed['pid'])
             except MissingPermission as ex:
                 options = ''
             except TypeError:
@@ -712,6 +718,12 @@ class myHandler(BaseHTTPRequestHandler):
             nbar = nbar_login
         if not rcookies:
             try:
+                if self.path.startswith('/robot'):
+                    speccall = True
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/plain')
+                    self.end_headers()
+                    self.wfile.write(robots)
                 if self.path.startswith('/api'):
                     speccall = True
                     self.api()
@@ -811,16 +823,24 @@ class myHandler(BaseHTTPRequestHandler):
                 self.wfile.write(bytes(page, 'utf-8'))
             except Exception as e:
                 timer_stop = time()
+                exc_type, exc_obj, tb = exc_info()
+                f = tb.tb_frame
+                lineno = tb.tb_lineno
+                filename = f.f_code.co_filename
+                linecache.checkcache(filename)
+                line = linecache.getline(filename, lineno, f.f_globals)
+                errorinfo = "File: %s<br>Line: %s<br>Error: %s" % (
+                    filename, lineno, type(e).__name__
+                    )
                 self.send_response(500)
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
-                page = base % (nbar, messagehtml %
-                               ('danger',
-                                'Oops! An error occured when processing your request!'),
+                page = base % (nbar, error %
+                               (errorinfo,
+                                ),
                                version, str(timer_stop - timer_start))
                 self.wfile.write(bytes(page, 'utf-8'))
                 raise e
-
     def do_POST(self):
         timer_start = time()
         self.cookie = parseCookie(dict(self.headers))
@@ -889,7 +909,6 @@ if count == 0:
     db.createOwner(mail, passwd)
     del mail
     del passwd
-
 try:
     if port:
         server = ThreadedHTTPServer(('127.0.0.1', port), myHandler)

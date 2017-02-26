@@ -1,6 +1,8 @@
 from base64 import b64encode
 with open('resources/favicon.png', 'rb') as f:
     icon = f.read()
+with open('html/error.html') as f:
+    error = f.read()
 with open('html/index.html') as f:
     index = f.read()
 with open('html/desc.html') as f:
@@ -49,4 +51,6 @@ with open('html/adminmenu.html') as f:
     adminmenu = f.read()
 with open('html/links_adminmenu.html') as f:
     links_adminmenu = f.read()
+with open('resources/robots.txt', 'rb') as f:
+    robots = f.read()
 print("Pages loaded")

@@ -51,4 +51,6 @@ with open('html/adminmenu.html') as f:
     adminmenu = f.read()
 with open('html/links_adminmenu.html') as f:
     links_adminmenu = f.read()
+with open('resources/robots.txt', 'rb') as f:
+    robots = f.read()
 print("Pages loaded")

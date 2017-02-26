@@ -693,6 +693,12 @@ class myHandler(BaseHTTPRequestHandler):
             nbar = nbar_login
         if not rcookies:
             try:
+                if self.path.startswith('/robot'):
+                    speccall = True
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/plain')
+                    self.end_headers()
+                    self.wfile.write(robots)
                 if self.path.startswith('/api'):
                     speccall = True
                     self.api()

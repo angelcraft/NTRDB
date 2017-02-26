@@ -24,7 +24,6 @@ import database
 
 ##################################config vairables########################
 MAX_STIKES = 6
-
 ##########################################################################
 
 parser = argparse.ArgumentParser()
@@ -390,7 +389,6 @@ class myHandler(BaseHTTPRequestHandler):
                 plgp = parsed["link"]
                 titleid_str = parsed['tid'].upper()
                 titleid = parsed['tid'].upper().split(';')
-                print(titleid)
                 plugname = parsed['name']
                 developer = parsed['developer']
                 devsite = parsed['devsite']
@@ -462,7 +460,7 @@ class myHandler(BaseHTTPRequestHandler):
                 for plugin in uplg:
                     table = table + \
                         links_mng % (
-                            plugin['name'], plugin['added'], item, item)
+                            plugin['name'], plugin['added'], plugin['id'], plugin['id'])
                 return managepage % table
             else:
                 raise BadUser(
@@ -594,7 +592,6 @@ class myHandler(BaseHTTPRequestHandler):
         for item in self.cdb.getApproved():
             count = count + 1
             name = "For "
-            print(item["TitleID"])
             if not item["TitleID"] == "Not game":
                 for game in item["TitleID"].split(";"):
                     name = name + getgamebytid(game) + ', '
@@ -795,32 +792,13 @@ class myHandler(BaseHTTPRequestHandler):
                 self.wfile.write(bytes(page, 'utf-8'))
             except MissingPermission as mp:
                 timer_stop = time()
-                cuser = self.checkAuth()[0]
-                user = self.cdb.getUser(email=cuser)
-                alertmsg = ''
-                if user['strikes'] < 0:
-                    alertmsg = "\nEvery time you try to use something you are not supposed to you'll get a strike. This is the first and only warning"
-                elif user['strikes'] == MAX_STIKES - 1:
-                    alertmsg = "\nYour account is now Banned. You will no longer be able to log in with this email"
-                    self.cdb.banUser(cuser, user['email'])
-                    user['banned'] = True
-                else:
-                    alertmsg = '\nYour account now has ' + \
-                        str(user['strikes'] + 1) + ' out of ' + \
-                        str(MAX_STIKES) + ' strikes'
-                user['strikes'] = user['strikes'] + 1
-                self.cdb.updateUser(cuser, cuser, **user)
-                page = base % (nbar, messagehtml %
-                               ('danger',
-                                'You need to be an ' + str(mp) + ' to be able to use this page.' + alertmsg),
-                               version, str(timer_stop - timer_start))
                 self.send_response(500)
                 self.send_header('Content-type', 'text/html')
-                if user['banned']:
-                    self.send_header('Set-Cookie', 'AToken=%s;HttpOnly;%s' %
-                                     (self.cookie['AToken'], 'Expires=Wed, 21 Oct 2007 07:28:00 GMT'))
-                    del sessions[computeMD5hash(self.cookie['AToken'])]
                 self.end_headers()
+                page = base % (nbar, messagehtml %
+                               ('danger',
+                                'You need to be an ' + str(mp) + ' to be able to use this page.'),
+                               version, str(timer_stop - timer_start))
                 self.wfile.write(bytes(page, 'utf-8'))
             except Exception as e:
                 timer_stop = time()

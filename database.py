@@ -1,68 +1,74 @@
 import dataset
 import json
 import datetime
-from custom_exception import MissingPermission, SQLException, BadUser
+from custom_exception import MissingPermission, SQLException, BadUser, Banned
 import hashlib
 from uuid import uuid4
 
-PLUGIN_INFO= {'id': False, 
-              'TitleID': True, 
-              'name': True, 
-              'developer': True, 
-              'devsite': True, 
-              'desc': True, 
-              'plg': True, 
-              'added': False, 
-              'timestamp': False,
-              'version': True, 
-              'compatible': True, 
-              'pic': True, 
-              'approved': True,
-              'uploader': False}
+PLUGIN_INFO = {'id': False,
+               'TitleID': True,
+               'name': True,
+               'developer': True,
+               'devsite': True,
+               'desc': True,
+               'plg': True,
+               'added': False,
+               'timestamp': False,
+               'version': True,
+               'compatible': True,
+               'pic': True,
+               'approved': True,
+               'uploader': False}
 
-USER_INFO={'uuid':False,
-           'email':True,
-           'hash':True,
-           'plugins':True,
-           'activate':False,
-           'permissions':False}
+USER_INFO = {'uuid': False,
+             'email': True,
+             'hash': True,
+             'plugins': True,
+             'activate': False,
+             'permissions': False,
+             'banned': True,
+             'strikes': True,
+             'passwd': True}
 
-OWNER_LEVEL= 0
-ADMIN_LEVEL= 1
-MOD_LEVEL= 2
-USER_LEVEL= 3
+OWNER_LEVEL = 0
+ADMIN_LEVEL = 1
+MOD_LEVEL = 2
+USER_LEVEL = 3
+BAN_LEVEL = 4
 
 
 class database():
-    db=None
-    plugins=None
-    users=None
-    def __init__(self):
-        self.db=dataset.connect("sqlite:///plugs.db")
-        self.plugins = self.db["Plugins"]
-        self.users = self.db.get_table("users", primary_id='uuid', primary_type='String(36)')
+    db = None
+    plugins = None
+    users = None
 
-#########################################Plugin#############################################
+    def __init__(self):
+        self.db = dataset.connect("sqlite:///plugs.db")
+        self.plugins = self.db["Plugins"]
+        self.users = self.db.get_table(
+            "users", primary_id='uuid', primary_type='String(36)')
+
+#########################################Plugin###########################
 
     def addPlugin(self, uploader, name, des, ver, dev, titleid, site, dwld, dsver, picture=""):
         now = datetime.datetime.now()
         user = self.getUser(email=uploader)
-        if user['permissions']<=MOD_LEVEL:
+        if user['permissions'] <= MOD_LEVEL:
             approved = True
         else:
             approved = False
         plugin = {'TitleID': titleid,
-                  'name': name, 
-                  'developer': dev, 
-                  'devsite': site, 
-                  'desc': des, 
-                  'plg': dwld, 
-                  'added': now.strftime("%Y-%m-%d %H:%M"), 
-                  'timestamp': now.timestamp(), 
-                  'version': ver, 
+                  'name': name,
+                  'developer': dev,
+                  'devsite': site,
+                  'desc': des,
+                  'plg': dwld,
+                  'added': now.strftime("%Y-%m-%d %H:%M"),
+                  'timestamp': now.timestamp(),
+                  'version': ver,
                   'compatible': dsver,
-                  'pic': picture, 
-                  'approved': approved, 
+                  'pic': picture,
+                  'approved': approved,
                   'uploader': uploader}
         newid = self.plugins.insert(plugin)
         user['plugins'].append(newid)
@@ -70,13 +76,12 @@ class database():
         plugin = self.getPlugin(pid=newid)
         return plugin
 
-
     def allowPlugin(self, user, pid):
-        user = self.getUser(email=user)  
-        if user["permissions"]<=MOD_LEVEL:
+        user = self.getUser(email=user)
+        if user["permissions"] <= MOD_LEVEL:
             plugin = self.getPlugin(pid=pid)
             if plugin != None:
-                plugin["approved"]=True
+                plugin["approved"] = True
                 self.plugins.update(plugin, ['id'])
             else:
                 raise SQLException("Plugin ID")
@@ -96,12 +101,12 @@ class database():
         """
         user = self.getUser(user)
         plugin = self.getPlugin(pid=pid)
-        if plugin!=None:
-            if user["permissions"]<=ADMIN_LEVEL or plugin['uploader']==user['email']:
+        if plugin != None:
+            if user["permissions"] <= ADMIN_LEVEL or plugin['uploader'] == user['email']:
                 for i in kwargs.keys():
                     try:
                         if PLUGIN_INFO[i]:
-                            plugin[i]=kwargs[i]
+                            plugin[i] = kwargs[i]
                         else:
                             pass
                     except KeyError:
@@ -120,8 +125,9 @@ class database():
             if newOwner != None:
                 plugin = self.getPlugin(pid=pid)
                 if plugin != None:
-                    previousOwner= self.getUser(plugin['uploader'])
-                    del previousOwner['plugins'][previousOwner['plugins'].index(plugin[id])]
+                    previousOwner = self.getUser(plugin['uploader'])
+                    del previousOwner['plugins'][
+                        previousOwner['plugins'].index(plugin[id])]
                     newOwner['plugins'].append(pid)
                     plugin['uploader'] = newOwner['email']
                     self.setPlugin(plugin)
@@ -134,13 +140,12 @@ class database():
         else:
             raise MissingPermission("Admin")
 
-
     def removePlugin(self, user, pid):
         admin = self.getUser(user)
         plugin = self.getPlugin(pid=pid)
-        if plugin!=None:
-            if admin['permissions']<=ADMIN_LEVEL or plugin['uploader']==admin['email']:
-                user=self.getUser(email=plugin["uploader"])
+        if plugin != None:
+            if admin['permissions'] <= ADMIN_LEVEL or plugin['uploader'] == admin['email']:
+                user = self.getUser(email=plugin["uploader"])
                 del user["plugins"][user["plugins"].index(pid)]
                 self.setUser(user)
                 self.plugins.delete(id=pid)
@@ -152,12 +157,12 @@ class database():
 
     def checkOwner(self, user, pid):
         user = self.getUser(user)
-        if pid in user['plugins'] or user['permissions']<=ADMIN_LEVEL:
+        if pid in user['plugins'] or user['permissions'] <= ADMIN_LEVEL:
             return True
         else:
             raise MissingPermission("Admin or Uploader")
 
-#######################################USER##########################################
+#######################################USER###############################
     def computeMD5hash(self, string):
         m = hashlib.sha512()
         string = str(string)
@@ -165,32 +170,34 @@ class database():
         return m.hexdigest()
 
     def addUser(self, email, password):
-        hashp=self.computeMD5hash(password)
+        hashp = self.computeMD5hash(password)
         del password
-        user={'uuid': str(uuid4()), 
-              'email': email, 
-              'hash' : str(hashp), 
-              'plugins': json.dumps([]),
-              'activate': False,
-              'permissions': USER_LEVEL}
+        user = {'uuid': str(uuid4()),
+                'email': email,
+                'hash': str(hashp),
+                'plugins': json.dumps([]),
+                'activate': False,
+                'permissions': USER_LEVEL,
+                'banned': False,
+                'strikes': -1}
         self.users.insert(user)
         return user
 
-    def updateUser(self, loged, tomod,**kwargs):
-        loged=self.getUser(email=loged)
-        user=sef.getUser(email=tomod)
+    def updateUser(self, loged, tomod, **kwargs):
+        loged = self.getUser(email=loged)
+        user = self.getUser(email=tomod)
         if user != None:
-            if loged['email']==user['email']:
+            if loged['email'] == user['email']:
                 for i in kwargs.keys():
-                    if i in USER_INFO:
-                        if i=="hash":
-                            phash = str(computeMD5hash(kwargs[i]))
+                    if USER_INFO[i]:
+                        if i == "passwd":
+                            phash = str(self.computeMD5hash(kwargs[i]))
                             del kwargs[i]
-                            user[i] = phash
+                            user["hash"] = phash
                         else:
                             user[i] = kwargs[i]
                     else:
-                        return False
+                        pass
             else:
                 raise MissingPermission("User Creator")
             self.setUser(user)
@@ -199,10 +206,10 @@ class database():
             raise SQLException("User")
 
     def deleteUser(self, user, todel):
-        admin=self.getUser(user)
-        todel=self.getUser(todel)
-        if todel!=None:
-            if admin['permissions']<=ADMIN_LEVEL or admin[uuid]==todel[uuid]:
+        admin = self.getUser(user)
+        todel = self.getUser(todel)
+        if todel != None:
+            if admin['permissions'] <= ADMIN_LEVEL or admin[uuid] == todel[uuid]:
                 for i in todel["plugins"]:
                     self.removePlugin(i)
                 self.users.delete(email=todel['email'])
@@ -211,26 +218,27 @@ class database():
         else:
             raise SQLException("User")
 
-
     def upgradePermis(self, user, upd, newPermissions):
-        admin=self.getUser(email=user)
-        if newPermissions<OWNER_LEVEL:
+        admin = self.getUser(email=user)
+        if newPermissions < OWNER_LEVEL:
             return False
         if admin['permissions'] <= OWNER_LEVEL:
             upg = self.getUser(email=upd)
-            if upg!=None:
+            if upg != None:
                 upg['permissions'] = newPermissions
+                upg['banned'] = False
                 self.setUser(upg)
                 return True
             else:
                 raise SQLException("User")
         elif admin["permissions"] <= ADMIN_LEVEL:
-            if newPermissions<=ADMIN_LEVEL:
+            if newPermissions <= ADMIN_LEVEL:
                 raise MissingPermission("Owner")
             else:
                 upg = self.getUser(email=upd)
                 if upg != None:
                     upg["permissions"] = newPermissions
+                    upg["banned"] = False
                     self.setUser(upg)
                     return True
                 else:
@@ -240,7 +248,7 @@ class database():
 
     def activateUser(self, uid):
         user = self.getUserUuid(uuid=uid)
-        if user!=None:
+        if user != None:
             user["activate"] = True
             self.setUser(user)
             return True
@@ -249,49 +257,71 @@ class database():
 
     def checkPermission(self, user, level=MOD_LEVEL):
         user = self.getUser(email=user)
-        if user['permissions']<=level:
+        if user['permissions'] <= level:
             return True
         else:
             raise MissingPermission(self.parsePerm(level))
 
+    def banUser(self, user, toBan):
+        user=self.getUser(email=user)
+        ban = self.getUser(email=toBan)
+        if user['permissions']<=ADMIN_LEVEL or user["email"] == ban["email"]:
+            if ban!=None:
+                ban['banned']=True
+                ban['permissions']=BAN_LEVEL
+                self.setUser(ban)
+            else:
+                raise SQLException("User")
+        else:
+            raise MissingPermission("Admin")
 
-######################################specific Getters and setters#####################################
+    def checkBan(self, user):
+        user = self.getUser(email=user)
+        if user['banned']:
+            raise Banned("")
+        else:
+            return False
+
+
+######################################specific Getters and setters########
 #-----------------------------Users------------------------------------#
     def getUser(self, email):
         user = self.users.find_one(email=email)
-        if user!=None:
+        if user != None:
             user["plugins"] = json.loads(user['plugins'])
         return user
 
     def getUserUuid(self, uuid):
         user = self.users.find_one(uuid=uuid)
-        if user!=None:
+        if user != None:
             user["plugins"] = json.loads(user["plugins"])
         return user
 
     def getAllUsers(self):
         return self.users.all()
 
-    def getAllPermissionUsers(self, permissionlevel = MOD_LEVEL):
-        return self.users.find(permissions = permissionlevel)
+    def getAllPermissionUsers(self, permissionlevel=MOD_LEVEL):
+        return self.users.find(permissions=permissionlevel)
 
     def setUser(self, user):
-        user['plugins']=json.dumps(user['plugins'])
+        user['plugins'] = json.dumps(user['plugins'])
         self.users.update(user, ['email'])
 
     def createOwner(self, user, password):
-        count=0
+        count = 0
         for i in self.getAllPermissionUsers(OWNER_LEVEL):
-            count+=1
-        if count==0:
-            hashp=self.computeMD5hash(password)
+            count += 1
+        if count == 0:
+            hashp = self.computeMD5hash(password)
             del password
-            user={'uuid': str(uuid4()), 
-                  'email': user, 
-                  'hash' : str(hashp), 
-                  'plugins': json.dumps([]),
-                  'activate': True,
-                  'permissions': OWNER_LEVEL}
+            user = {'uuid': str(uuid4()),
+                    'email': user,
+                    'hash': str(hashp),
+                    'plugins': json.dumps([]),
+                    'activate': True,
+                    'permissions': OWNER_LEVEL,
+                    'banned': False,
+                    'strikes': -1}
             self.users.insert(user)
 
 #-----------------------------Plugins----------------------------------#
@@ -309,7 +339,7 @@ class database():
 
     def getCloned(self, **kwargs):
         cld = self.plugins.find_one(**kwargs)
-        if cld!=None:
+        if cld != None:
             return cld
         else:
             return False
@@ -320,13 +350,17 @@ class database():
     def setPlugin(self, plugin):
         self.plugins.update(plugin, ['id'])
 
-######################################################OTHER###################################################
+######################################################OTHER#############################################
     def parsePerm(self, level):
         string = ""
-        if level==OWNER_LEVEL:
-            string="Owner"
-        elif level==ADMIN_LEVEL:
-            string="Admin"
-        elif level==MOD_LEVEL:
-            string=="Moderator"
+        if level == OWNER_LEVEL:
+            string = "Owner"
+        elif level == ADMIN_LEVEL:
+            string = "Admin"
+        elif level == MOD_LEVEL:
+            string == "Moderator"
+        elif level == USER_LEVEL:
+            string = "User"
+        elif level == BAN_LEVEL:
+            string = "Banned"
         return string

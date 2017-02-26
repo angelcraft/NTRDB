@@ -15,17 +15,17 @@ def parseCookie(header):
     d = {h[0]: data}
     return d
 errcounter = 0
-print("Removing old database")
+print("Removing old database...")
 try:
     remove('plugs.db')
 except Exception as e:
     pass
-print("Starting server.")
+print("Starting server...")
 server = Popen(['python3', 'main.py', '--tests', 'True', '-p', '8080'],
                stdin=PIPE,
                stdout=DEVNULL,
                stderr=DEVNULL)
-print("Sleeping 20 seconds to wait init")
+print("Sleeping 20 seconds...")
 sleep(20)
 try:
     server.wait(timeout=1)
@@ -49,7 +49,7 @@ except TimeoutExpired:
         content = urlopen(url=url, data=data)
     except HTTPError as e:
         print("Login:FAIL(non-200 status code:%s)" % (e.code))
-        print("The next tests wont happen: Add, Edit, Remove")
+        print("The next tests wont happen: Add, Edit, Remove, Logout")
     else:
         cookies = content.getheader('Set-Cookie')
         if 'AToken' in cookies:
@@ -102,12 +102,31 @@ except TimeoutExpired:
                     print("Logout:FAIL(wrong page received)")
         else:
             print("Login:FAIL(No cookies received)")
-            print("The next tests wont happen: Add, Edit, Remove")
+            print("The next tests wont happen: Add, Edit, Remove, Logout")
             errcounter = errcounter + 1
+    url = 'http://127.0.0.1:8080/reg'
+    data = urlencode({'rtype': 'regpg',
+                      'email': 'test2@test.test',
+                      'pword': 'test2'
+                      }).encode('utf-8')
+    try:
+        content = urlopen(url=url, data=data)                
+    except HTTPError as e:
+        print("Registration:FAIL(non-200 status code %s)" % (e.code))
+    else:
+        if 'You have registered succesfully!' in str(content.read(), 'utf-8'):
+            print("Registration:OK")
+        else:
+            print("Registration:FAIL(wrong page received)")
     server.kill()
 else:
-    print("FAIL SERVER HASNT STARTED UP!")
+    print("Server startup failed.")
     errcounter = errcounter + 1
+print("Cleaning...")
+try:
+    remove('plugs.db')
+except Exception as e:
+    pass
 if errcounter == 0:
     print("Tests were completed succesfully.")
     exit()

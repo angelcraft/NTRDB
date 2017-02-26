@@ -618,8 +618,8 @@ class myHandler(BaseHTTPRequestHandler):
 
     def description(self):
         parsed = parseURL(self.path)
-        if "id" in parsed:
-            gid = int(parsed["id"])
+        if "pid" in parsed:
+            gid = int(parsed["pid"])
             cuser, _ = self.checkAuth()
             luser = self.cdb.getUser(email=cuser)
             try:

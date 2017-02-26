@@ -26,23 +26,6 @@ def test_addplgpg():
         assert True
 
 
-def test_editpg():
-    url = 'http://127.0.0.1:8080/login'
-    data = urlencode({'rtype': 'loginpg',
-                      'email': 'test@test.test',
-                      'pword': 'test'
-                      }).encode('utf-8')
-    content = urlopen(url=url, data=data)
-    cookies = content.getheader('Set-Cookie')
-    if 'AToken' not in cookies:
-        raise exceptions.NoCookieReceived()
-    else:
-        opener = build_opener()
-        opener.addheaders.append(('Cookie', cookies))
-        opener.open('http://127.0.0.1:8080/edit')
-        assert True
-
-
 def test_logpg():
     urlopen('http://127.0.0.1:8080/login')
     assert True

@@ -1,9 +1,11 @@
-from subprocess import Popen, PIPE, DEVNULL, TimeoutExpired, call
+from subprocess import Popen, PIPE, DEVNULL, TimeoutExpired
 from urllib.request import urlopen
-from os import remove, system
+from os import remove
 from os.path import exists
 from time import sleep
 from sys import exit
+from time import time
+import pytest
 if exists('plugs.db'):
     remove('plugs.db')
 server = Popen(['python3', 'main.py', '--tests', 'True', '-p', '8080'],
@@ -11,6 +13,8 @@ server = Popen(['python3', 'main.py', '--tests', 'True', '-p', '8080'],
                stdout=DEVNULL,
                stderr=DEVNULL)
 print("Waiting init of server")
+
+start_t = time()
 while 1:
     try:
         urlopen('http://127.0.0.1:8080')
@@ -24,10 +28,15 @@ while 1:
             print("Server hasnt started up properly!")
             exit('Tests blacked out!')
     else:
-        print("Server started! Beggining tests!")
+        end_t = time()
         break
 
-retval = None
-retval = call(['python3', '-m', 'pytest'])
+
+class initinfo:
+    def pytest_report_header(self):
+        return ("Server started in %s seconds" % (end_t - start_t))
+
+
+retval = pytest.main(plugins=[initinfo()])
 server.kill()
 exit(retval)

@@ -445,6 +445,7 @@ class myHandler(BaseHTTPRequestHandler):
                         if plug:
                             uplg.append(plug)
                 for plugin in uplg:
+                    print(plugin)
                     table = table + \
                         links_mng % (
                             plugin['name'], plugin['added'], item, item)

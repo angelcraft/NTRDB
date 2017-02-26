@@ -4,6 +4,22 @@ from urllib.error import HTTPError
 import exceptions
 
 
+def login():
+    url = 'http://127.0.0.1:8080/login'
+    data = urlencode({'rtype': 'loginpg',
+                      'email': 'test@test.test',
+                      'pword': 'test'
+                      }).encode('utf-8')
+    content = urlopen(url=url, data=data)
+    cookies = content.getheader('Set-Cookie')
+    if 'AToken' not in cookies:
+        raise exceptions.NoCookieReceived()
+    else:
+        opener = build_opener()
+        opener.addheaders.append(('Cookie', cookies))
+        return opener
+
+
 def test_reg():
     url = 'http://127.0.0.1:8080/reg'
     data = urlencode({'rtype': 'regpg',
@@ -11,7 +27,10 @@ def test_reg():
                       'pword': 'test2'
                       }).encode('utf-8')
     content = urlopen(url=url, data=data)
-    assert True
+    if 'You have registered succesfully!' in str(content.read(), 'utf-8'):
+        assert True
+    else:
+        raise exceptions.BadPage
 
 
 def test_login():
@@ -28,31 +47,39 @@ def test_login():
         assert True
 
 
-def test_pluginmgmt():
-    url = 'http://127.0.0.1:8080/login'
-    data = urlencode({'rtype': 'loginpg',
-                      'email': 'test@test.test',
-                      'pword': 'test'
-                      }).encode('utf-8')
-    content = urlopen(url=url, data=data)
-    cookies = content.getheader('Set-Cookie')
-    if 'AToken' not in cookies:
-        raise exceptions.NoCookieReceived()
-    else:
-        opener = build_opener()
-        opener.addheaders.append(('Cookie', cookies))
+def test_add():
+    opener = login()
     addtest = opener.open(
         'http://127.0.0.1:8080/additem?name=Test+plugin&desc=Test&ver=0&developer=Developer&tid=00040000001A3200%3B00040000001A4100&devsite=http%3A%2F%2Fexample.com&link=http%3A%2F%2Fexample.com%2Fplg&pic=&ctype=universal&add=1')
     if not 'Your plugin were added to base. Now you need to wait for moderator to approve it.' in str(addtest.read(), 'utf-8'):
         raise exceptions.BadPage
-    del addtest
+    else:
+        assert True
+
+
+def test_edit():
+    opener = login()
     edittest = opener.open(
         'http://127.0.0.1:8080/edit?edit=1&plugid=1&name=Test+plugin+edited&desc=Test&ver=0&developer=Developer&tid=00040000001A3200%3B00040000001A4100&devsite=http%3A%2F%2Fexample.com&link=http%3A%2F%2Fexample.com%2Fplg&pic=&ctype=universal&add=1')
     if not "Your plugin was edited successfully" in str(edittest.read(), 'utf-8'):
         raise exceptions.BadPage
-    del edittest
+    else:
+        assert True
+
+
+def test_rm():
+    opener = login()
     rmtest = opener.open('http://127.0.0.1:8080/rm?plugid=1&sure=1')
     if not 'Your plugin was removed' in str(rmtest.read(), 'utf-8'):
         raise exceptions.BadPage
-    del rmtest
-    assert True
+    else:
+        assert True
+
+
+def test_mg():
+    opener = login()
+    managetest = opener.open('http://127.0.0.1:8080/manageitems')
+    if "Manage your plugins" in str(managetest.read(), 'utf-8'):
+        raise exceptions.BadPage
+    else:
+        assert True

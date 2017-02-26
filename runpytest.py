@@ -1,5 +1,5 @@
 from subprocess import Popen, PIPE, DEVNULL, TimeoutExpired, call
-from urllib.request import urlopenS
+from urllib.request import urlopen
 from os import remove, system
 from os.path import exists
 from time import sleep

@@ -800,7 +800,7 @@ class myHandler(BaseHTTPRequestHandler):
                                 ),
                                version, str(timer_stop - timer_start))
                 self.wfile.write(bytes(page, 'utf-8'))
-
+                raise e
     def do_POST(self):
         timer_start = time()
         self.cookie = parseCookie(dict(self.headers))

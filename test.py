@@ -4,6 +4,7 @@ from urllib.error import HTTPError
 from subprocess import Popen, PIPE, DEVNULL, TimeoutExpired
 from time import sleep
 from os import remove
+from os.path import exists
 from sys import exit
 
 
@@ -16,10 +17,8 @@ def parseCookie(header):
     return d
 errcounter = 0
 print("Removing old database...")
-try:
+if exists('plugs.db'):
     remove('plugs.db')
-except Exception as e:
-    pass
 print("Starting server...")
 server = Popen(['python3', 'main.py', '--tests', 'True', '-p', '8080'],
                stdin=PIPE,
@@ -123,10 +122,8 @@ else:
     print("Server startup failed.")
     errcounter = errcounter + 1
 print("Cleaning...")
-try:
+if exists('plugs.db'):
     remove('plugs.db')
-except Exception as e:
-    pass
 if errcounter == 0:
     print("Tests were completed succesfully.")
     exit()

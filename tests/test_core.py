@@ -76,10 +76,4 @@ def test_rm():
         assert True
 
 
-def test_mg():
-    opener = login()
-    managetest = opener.open('http://127.0.0.1:8080/manageitems')
-    if "Manage your plugins" in str(managetest.read(), 'utf-8'):
-        raise exceptions.BadPage
-    else:
-        assert True
+

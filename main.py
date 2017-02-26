@@ -624,14 +624,20 @@ class myHandler(BaseHTTPRequestHandler):
                 count,
                 item['name'],
                 item["desc"].replace('\n', '<br>'),
+                item["id"],
+                pic,
+                count,
                 pic,
                 item["name"],
                 name,
+                item['version'],
+                item['developer'],
                 count,
                 item['plg'],
                 item['devsite'],
                 cpbicon,
                 item["added"],
+                item['id'],
             )
         if count == 0:
             table = "<center><h3>No items :(</h3></center>"

@@ -625,7 +625,7 @@ class myHandler(BaseHTTPRequestHandler):
             try:
                 if self.cdb.checkPermission(cuser, database.ADMIN_LEVEL):
                     options = 'Options:<a href="edit?plugid=%s" class="btn btn-secondary btn-sm">Edit</a><a href="rm?plugid=%s" class="btn btn-danger btn-sm">Remove</a>' % (
-                        parsed['id'], parsed['id'])
+                        parsed['pid'], parsed['pid'])
             except MissingPermission as ex:
                 options = ''
             except TypeError:

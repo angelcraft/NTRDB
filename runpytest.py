@@ -1,4 +1,4 @@
-from subprocess import Popen, PIPE, DEVNULL, TimeoutExpired
+from subprocess import Popen, DEVNULL, TimeoutExpired
 from urllib.request import urlopen
 from os import remove
 from os.path import exists
@@ -9,11 +9,9 @@ import pytest
 if exists('plugs.db'):
     remove('plugs.db')
 server = Popen(['python3', 'main.py', '--tests', 'True', '-p', '8080'],
-               stdin=PIPE,
+               stdin=DEVNULL,
                stdout=DEVNULL,
                stderr=DEVNULL)
-print("Waiting init of server")
-
 start_t = time()
 while 1:
     try:

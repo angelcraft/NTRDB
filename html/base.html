@@ -1,155 +1,232 @@
 <!DOCTYPE html>
 <html>
-      <head>
-            <script src="https://use.fontawesome.com/1fa2fdd929.js"></script>
-            <script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.js"></script>
-            <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/wow/1.1.2/wow.min.js"></script>
-            <link rel="shortcut icon" type="image/png" href="favicon.png" />
-            <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
-            <title>NTR Plugins Database</title>
-            <!-- Required meta tags -->
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=0">
-            <!-- Info for search engines -->
-            <meta name="description" content="NTR Plugins database">
-            <meta name="keywords" content="NTR, BootNTR, 3DS, 3d shack">
-            <meta name="author" content="OctoNezd">
-            <meta name="application-name" content="NTR Plugins database">
-            <!-- Bootstrap CSS -->
-            <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.2/animate.min.css">
-            <style>
-            .reg {
-              display: flex;
-            }
-            .desc-more{
-                overflow: hidden;
-                font-size: 16px !important;
-                transition: all 0.3s;
-                margin-bottom: 10px;
-            }
-            .desc-less{
-                height: 90px!important;
-            }
-            .row {
-                width: 100%% !important;
-                margin-left: 0px !important;
-                margin-right: 0px !important;
-            }
-            .col-xs-12 {
-                width: 100%%;
-            }
-            body {
-                font-family: 'Open Sans', sans-serif;
-            }
-            .screenshot {
-                max-width: 600px;
-                width: 100%%;
-                max-height: 600px;
-                height: 100%%;
-            }
-            .btnblock {
-                  display: block;
-                  width: 90%%;
-            }
-            :target {
-              animation-name: colorswitch;
-              animation-duration: 0.5s;
-              animation-timing-function: ease-in;
-              animation-iteration-count: 3;
-            }
-            @keyframes colorswitch {
-              0%% {
-                background-color: inherit;
-              }
-              50%% {
-                background-color: orange;
-              }
-              100%% {
-                background-color: inherit;
-              }
-            }
-            @media (max-width: 575px) { 
-              .card {
-                  width:90%% !important;
-              }
-              .screenshot {
-                  max-width: 575px !important;
-                  width: 100%% !important;
-                  max-height: 575px !important;
-                  height: 100%%;
-              }
-              .nomobile {
-                display: none !important;
-              }
-            }
-            </style>
-            <link rel="stylesheet" type="text/css" id="theme_css" href="light.css">
-            <script type="text/javascript">
-              $(':target').addClass('pulse');
-              $(':target').one()
-            </script>
-            <!-- Yandex.Metrika counter --> <script src="https://mc.yandex.ru/metrika/watch.js" type="text/javascript"></script> <script type="text/javascript"> try { var yaCounter43071489 = new Ya.Metrika({ id:43071489, clickmap:true, trackLinks:true, accurateTrackBounce:true }); } catch(e) { } </script> <noscript><div><img src="https://mc.yandex.ru/watch/43071489" style="position:absolute; left:-9999px;" alt="" /></div></noscript> <!-- /Yandex.Metrika counter -->
-            <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.9.0/css/lightbox.min.css">
-            <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.9.0/js/lightbox.min.js"></script>
-      </head>
-      <body id="body">
-            <nav class="navbar navbar-toggleable-md navbar-inverse bg-primary" id='TopBar'>
-              <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-              </button>
-              <a class="navbar-brand" href="index">
-              <img src="/favicon" width="30" height="30" class="d-inline-block align-top" alt="">
-              NTR Plugin database
-              </a>
-              <div class="collapse navbar-collapse" id="navbarsExampleDefault">
-                <ul class="navbar-nav mr-auto">
-                  <!--
-                  <li class="nav-item dropdown">
-                  <a class="nav-link dropdown-toggle" href="#" id="dropdown02" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Theme</a>
-                  <div class="dropdown-menu" aria-labelledby="dropdown02">
-                  <a class="dropdown-item" href="#" onclick="document.getElementById('theme_css').href = '../light.css';">Light theme</a>
-                  <a class="dropdown-item" href="#" onclick="document.getElementById('theme_css').href = '../dark.css';">Dark Theme</a>
-                  </li>
-                  -->
-                  %s
-                  <li class="nav-item dropdown navbar-right">
-                  <a class="nav-link dropdown-toggle navbar-right" href="#" id="dropdown02" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Social</a>
-                  <div class="dropdown-menu" aria-labelledby="dropdown02">
+   <head>
+      <script src="https://use.fontawesome.com/1fa2fdd929.js"></script>
+      <script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/wow/1.1.2/wow.min.js"></script>
+      <link rel="shortcut icon" type="image/png" href="favicon.png" />
+      <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+      <title>NTR Plugins Database</title>
+      <!-- Required meta tags -->
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=0">
+      <!-- Info for search engines -->
+      <meta name="description" content="NTR Plugins database">
+      <meta name="keywords" content="NTR, BootNTR, 3DS, 3d shack">
+      <meta name="author" content="OctoNezd">
+      <meta name="application-name" content="NTR Plugins database">
+      <!-- Bootstrap CSS -->
+      <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.2/animate.min.css">
+      <style>
+         .reg {
+         display: flex;
+         }
+         .desc-more{
+         overflow: hidden;
+         font-size: 16px !important;
+         transition: all 0.3s;
+         margin-bottom: 10px;
+         }
+         .desc-less{
+         height: 90px!important;
+         }
+         .row {
+         width: 100%% !important;
+         margin-left: 0px !important;
+         margin-right: 0px !important;
+         }
+         .col-xs-12 {
+         width: 100%%;
+         }
+         body {
+         font-family: 'Open Sans', sans-serif;
+         }
+         .screenshot {
+         max-width: 600px;
+         width: 100%%;
+         max-height: 600px;
+         height: 100%%;
+         }
+         .btnblock {
+         display: block;
+         width: 90%%;
+         }
+         :target {
+         animation-name: colorswitch;
+         animation-duration: 0.5s;
+         animation-timing-function: ease-in;
+         animation-iteration-count: 3;
+         }
+         @keyframes colorswitch {
+         0%% {
+         background-color: inherit;
+         }
+         50%% {
+         background-color: orange;
+         }
+         100%% {
+         background-color: inherit;
+         }
+         }
+         @media (max-width: 575px) { 
+         .card {
+         width:90%% !important;
+         }
+         .screenshot {
+         max-width: 575px !important;
+         width: 100%% !important;
+         max-height: 575px !important;
+         height: 100%%;
+         }
+         .nomobile {
+         display: none !important;
+         }
+         }
+      </style>
+      <link rel="stylesheet" type="text/css" id="theme_css" href="light.css">
+      <script type="text/javascript">
+         $(':target').addClass('pulse');
+         $(':target').one()
+      </script>
+      <!-- Yandex.Metrika counter --> <script src="https://mc.yandex.ru/metrika/watch.js" type="text/javascript"></script> <script type="text/javascript"> try { var yaCounter43071489 = new Ya.Metrika({ id:43071489, clickmap:true, trackLinks:true, accurateTrackBounce:true }); } catch(e) { } </script> 
+      <noscript>
+         <div><img src="https://mc.yandex.ru/watch/43071489" style="position:absolute; left:-9999px;" alt="" /></div>
+      </noscript>
+      <!-- /Yandex.Metrika counter -->
+      <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.9.0/css/lightbox.min.css">
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.9.0/js/lightbox.min.js"></script>
+   </head>
+   <body id="body">
+      <div class="modal fade" id="login" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+         <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+               <div class="modal-header">
+                  <h5 class="modal-title" id="exampleModalLongTitle" style="color: black">Log In</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                  </button>
+               </div>
+               <form class="form-signin" method="POST">
+                  <div class="modal-body">
+                     <label for="inputEmail" class="sr-only">Email address</label>
+                     <input type="email" id="inputEmail" class="form-control" placeholder="Email address" required autofocus name="email">
+                     <label for="inputPassword" class="sr-only">Password</label>
+                     <input type="password" id="inputPassword" class="form-control" placeholder="Password" required name="pword">
+                     <input type="hidden" name='rtype' value='loginpg'>
+                  </div>
+                  <div class="modal-footer">
+                     <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+                     <center>
+                        <a href="#" onclick="event.preventDefault();$('#login').modal('hide');$('#reg').modal('toggle')">Don't have an account?</a>
+                     </center>
+                  </div>
+               </form>
+            </div>
+         </div>
+      </div>
+      <div class="modal fade" id="reg" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+         <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+               <div class="modal-header">
+                  <h5 class="modal-title" id="exampleModalLongTitle" style="color: black">Register</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                  </button>
+               </div>
+               <form class="form-signin" method="POST">
+                  <div class="modal-body reg">
+                     <div class="card-deck" style="width:100%%">
+                        <div class='card' style="color: black;text-align: left">
+                           <div class="card-block">
+                              <h3 class="card-title">Why register?</h3>
+                              <p class='card-text'>
+                              <ul>
+                                 <li>Add your own plugins!</li>
+                                 <li>Just for fun!</li>
+                              </ul>
+                              </p>
+                           </div>
+                        </div>
+                        <div class='card'>
+                           <div class="card-block">
+                              <p class='card-text'>
+                                 <label for="inputEmail" class="sr-only">Email address</label>
+                                 <input type="email" id="inputEmail" class="form-control" placeholder="Email address" required autofocus name="email">
+                                 <label for="inputPassword" class="sr-only">Password</label>
+                                 <input type="password" id="inputPassword" class="form-control" placeholder="Password" required name="pword">
+                                 <input type="hidden" name='rtype' value='regpg'>
+                                 <button class="btn btn-lg btn-primary btn-block" type="submit">Register</button>
+                              </p>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+                  <div class="modal-footer">
+                     <center>
+                        <a href="#" onclick="event.preventDefault();$('#reg').modal('hide');$('#login').modal('toggle')">Already have an account?</a>
+                     </center>
+                  </div>
+               </form>
+            </div>
+         </div>
+      </div>
+      <nav class="navbar navbar-toggleable-md navbar-inverse bg-primary" id='TopBar'>
+         <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+         <span class="navbar-toggler-icon"></span>
+         </button>
+         <a class="navbar-brand" href="index">
+         <img src="/favicon" width="30" height="30" class="d-inline-block align-top" alt="">
+         NTR Plugin database
+         </a>
+         <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+         <ul class="navbar-nav mr-auto">
+            <!--
+               <li class="nav-item dropdown">
+               <a class="nav-link dropdown-toggle" href="#" id="dropdown02" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Theme</a>
+               <div class="dropdown-menu" aria-labelledby="dropdown02">
+               <a class="dropdown-item" href="#" onclick="document.getElementById('theme_css').href = '../light.css';">Light theme</a>
+               <a class="dropdown-item" href="#" onclick="document.getElementById('theme_css').href = '../dark.css';">Dark Theme</a>
+               </li>
+               -->
+            %s
+            <li class="nav-item dropdown navbar-right">
+               <a class="nav-link dropdown-toggle navbar-right" href="#" id="dropdown02" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Social</a>
+               <div class="dropdown-menu" aria-labelledby="dropdown02">
                   <a class="dropdown-item" href="http://t.me/dshacking"><i class="fa fa-telegram" aria-hidden="true"></i> Telegram group</a>
                   <a class="dropdown-item" href="http://gbatemp.net/threads/wip-ntrdb.461288/"><i class="fa fa-users" aria-hidden="true"></i> GBATemp thread</a>
+            </li>
+         </ul>
+         </div>
+      </nav>
+      <div id="main">
+         <div class="container">
+            <p></p>
+            %s
+            <p></p>
+         </div>
+         <nav class="navbar navbar-toggleable-md navbar-light bottom" id='LoBar' style="position: fixed;bottom: 0;padding: 10px;width:100%%">
+            <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+               <ul class="navbar-nav mr-auto">
+                  <li class="nav-item">
+                     <a class="nav-link" href="http://github.com/octonezd/ntrdb">Based on commit:%s</a>
                   </li>
-                </ul>
-              </div>
-            </nav>
-            <div id="main">
-            <div class="container">
-                <p></p>
-                %s
-                <p></p>
-            </div>
-              <nav class="navbar navbar-toggleable-md navbar-light bottom" id='LoBar' style="position: fixed;bottom: 0;padding: 10px;width:100%%">
-                <div class="collapse navbar-collapse" id="navbarsExampleDefault">
-                  <ul class="navbar-nav mr-auto">
-                    <li class="nav-item">
-                      <a class="nav-link" href="http://github.com/octonezd/ntrdb">Based on commit:%s</a>
-                    </li>
-                    <center>
-                      <li class="nav-item">
+                  <center>
+                     <li class="nav-item">
                         <a class="navbar-text">Page generated in %s seconds</a>
-                      </li>
-                    </center>
-                    <li class="nav-item justify-content-end">
-                      <a class="nav-link" href="https://github.com/OctoNezd/NTRDB/blob/master/LICENSE">License</a>
-                    </li>
-                  </ul>
-                </div>
-              </nav>
+                     </li>
+                  </center>
+                  <li class="nav-item justify-content-end">
+                     <a class="nav-link" href="https://github.com/OctoNezd/NTRDB/blob/master/LICENSE">License</a>
+                  </li>
+               </ul>
             </div>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
-            <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
-            <script type="text/javascript">
-              $("#header").prependTo("#main");
-            </script>
-      </body>
-      </html>
+         </nav>
+      </div>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
+      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
+      <script type="text/javascript">
+         $("#header").prependTo("#main");
+      </script>
+   </body>
+</html>

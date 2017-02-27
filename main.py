@@ -467,7 +467,6 @@ class myHandler(BaseHTTPRequestHandler):
                         if plug:
                             uplg.append(plug)
                 for plugin in uplg:
-                    plugin = self.cdb.getPlugin(pid=plugin)
                     item = plugin['id']
                     table = table + \
                         links_mng % (

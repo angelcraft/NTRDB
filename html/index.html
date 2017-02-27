@@ -1,11 +1,85 @@
 <div id="header" style="background-image: url(https://cdn.spacetelescope.org/archives/images/wallpaper5/heic1608a.jpg);color:white;padding: 50px;">
-<center>
-<h3>Welcome to NTR Plugin Database</h3>
-Hosting links and stuff for %s plugins totally
-</center>
+  <center>
+    <h1>Welcome to NTR Plugin Database</h1>
+    <h2>Hosting links and stuff for %s plugins totally</h2>
+    <h4>%s</h4>
+    <div class="modal fade" id="login" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLongTitle" style="color: black">Log In</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <form class="form-signin" method="POST">
+            <div class="modal-body">
+              <label for="inputEmail" class="sr-only">Email address</label>
+              <input type="email" id="inputEmail" class="form-control" placeholder="Email address" required autofocus name="email">
+              <label for="inputPassword" class="sr-only">Password</label>
+              <input type="password" id="inputPassword" class="form-control" placeholder="Password" required name="pword">
+              <input type="hidden" name='rtype' value='loginpg'>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+              <center>
+                <a href="#" onclick="event.preventDefault();$('#login').modal('hide');$('#reg').modal('toggle')">Don't have an account?</a>
+              </center>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="reg" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLongTitle" style="color: black">Register</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <form class="form-signin" method="POST">
+            <div class="modal-body reg">
+              <div class="card-deck" style="width:100%%">
+                <div class='card' style="color: black;text-align: left">
+                  <div class="card-block">
+                    <h3 class="card-title">Why register?</h3>
+                    <p class='card-text'>
+                    <ul>
+                      <li>Add your own plugins!</li>
+                      <li>Just for fun!</li>
+                    </ul>
+                    </p>
+                  </div>
+                </div>
+                <div class='card'>
+                  <div class="card-block">
+                    <p class='card-text'>
+                      <label for="inputEmail" class="sr-only">Email address</label>
+                      <input type="email" id="inputEmail" class="form-control" placeholder="Email address" required autofocus name="email">
+                      <label for="inputPassword" class="sr-only">Password</label>
+                      <input type="password" id="inputPassword" class="form-control" placeholder="Password" required name="pword">
+                      <input type="hidden" name='rtype' value='regpg'>
+                      <button class="btn btn-lg btn-primary btn-block" type="submit">Register</button>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <center>
+                <a href="#" onclick="event.preventDefault();$('#reg').modal('hide');$('#login').modal('toggle')">Already have an account?</a>
+              </center>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </center>
 </div>
 <center>
-<div style="padding: 20px;display: flex; flex-direction: row; flex-wrap: wrap;justify-content:center">
-%s
-</div>
+  <div style="padding: 20px;display: flex; flex-direction: row; flex-wrap: wrap;justify-content:center">
+    %s
+  </div>
 </center>

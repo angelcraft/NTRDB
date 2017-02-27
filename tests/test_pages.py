@@ -49,13 +49,3 @@ def test_addplgpg():
         opener.addheaders.append(('Cookie', cookies))
         opener.open('http://127.0.0.1:8080/additem')
         assert True
-
-
-def test_logpg():
-    urlopen('http://127.0.0.1:8080/login')
-    assert True
-
-
-def test_regpg():
-    urlopen('http://127.0.0.1:8080/reg')
-    assert True

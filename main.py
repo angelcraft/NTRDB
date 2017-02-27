@@ -21,8 +21,12 @@ import argparse
 from loader import *
 #import dataset
 from sys import exc_info
-from custom_exception import MissingPermission, SQLException, BadUser
+from custom_exception import MissingPermission, SQLException, BadUser, Banned
 import database
+
+##################################config vairables########################
+
+##########################################################################
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-p', '--port', type=int,
@@ -133,29 +137,32 @@ class myHandler(BaseHTTPRequestHandler):
         if cuser:
             page = "<META HTTP-EQUIV=\"refresh\" CONTENT=\"1; URL=index\">"
         else:
-            if args is not False:
-                if 'email' in args:
-                    user = self.cdb.getUser(email=args['email'])
-                    if user != None:
-                        phash = computeMD5hash(args['pword'])
-                        if user['activate']:
-                            if user['hash'] == phash:
-                                page = messagehtml % (
-                                    'success', "You succesfully logged in, you will redirect to main page in 5 seconds, or you can click Return To Index<META HTTP-EQUIV=\"refresh\" CONTENT=\"5; URL=index\">")
-                                cookie = str(uuid4())
-                                sessions[
-                                    computeMD5hash(cookie)] = args['email']
+            try:
+                if args is not False:
+                    if 'email' in args:
+                        user = self.cdb.getUser(email=args['email'])
+                        if user != None:
+                            phash = computeMD5hash(args['pword'])
+                            if user['activate'] and not self.cdb.checkBan(user['email']):
+                                if user['hash'] == phash:
+                                    page = messagehtml % (
+                                        'success', "You succesfully logged in, you will redirect to main page in 5 seconds, or you can click Return To Index<META HTTP-EQUIV=\"refresh\" CONTENT=\"5; URL=index\">")
+                                    cookie = str(uuid4())
+                                    sessions[
+                                        computeMD5hash(cookie)] = args['email']
+                                else:
+                                    page = messagehtml % (
+                                        'danger', 'You entered wrong password or email')
                             else:
                                 page = messagehtml % (
-                                    'danger', 'You entered wrong password or email')
+                                    'danger', 'This account hasnt activated yet.')
                         else:
                             page = messagehtml % (
-                                'danger', 'This account hasnt activated yet.')
-                    else:
-                        page = messagehtml % (
-                            'danger', 'You entered wrong password or email')
-            else:
-                page = login_page
+                                'danger', 'You entered wrong password or email')
+                else:
+                    page = login_page
+            except Banned as ex:
+                raise ex
         return page, cookie
 
     def register(self, parsed):
@@ -176,6 +183,7 @@ class myHandler(BaseHTTPRequestHandler):
                                     if self.send_mail(search["email"], search["uuid"]):
                                         return messagehtml % (
                                             'info', "Resending the activation mail from ntrdb@octonezd.pw!")
+
                                     else:
                                         return messagehtml % (
                                             "danger", "Failed to reach the mailserver. Please try again later")
@@ -278,12 +286,14 @@ class myHandler(BaseHTTPRequestHandler):
                             table = table + links_adminmenu % (
                                 i['email'],
                                 i['permissions'],
-                                "<a href='adminmenu?user=%s' class='btn btn-info btn-sm'>User</a>" % (
-                                    i['email']),
-                                "<a href='adminmenu?moder=%s' class='btn btn-info btn-sm'>Moderator</a>" % (
-                                    i['email']),
-                                "<a href='adminmenu?admin=%s' class='btn btn-info btn-sm'>Administrator</a>" % (
-                                    i['email'])
+                                "<a href='adminmenu?user=%s' class='btn btn-info btn-sm'>User</a>" % (i[
+                                                                                                      'email']),
+                                "<a href='adminmenu?moder=%s' class='btn btn-info btn-sm'>Moderator</a>" % (i[
+                                                                                                            'email']),
+                                "<a href='adminmenu?admin=%s' class='btn btn-info btn-sm'>Administrator</a>" % (i[
+                                                                                                                'email']),
+                                "<a href='adminmenu?ban=%s' class='btn btn-danger btn-sm'>Ban</a>" % (i[
+                                                                                                    'email'])
                             )
                         page = adminmenu % (table)
 
@@ -295,10 +305,12 @@ class myHandler(BaseHTTPRequestHandler):
                                     table = table + links_adminmenu % (
                                         i['email'],
                                         i['permissions'],
-                                        "<a href='adminmenu?user=%s' class='btn btn-info btn-sm'>User</a>" % (
-                                            i['email']),
-                                        "<a href='adminmenu?moder=%s' class='btn btn-info btn-sm'>Moderator</a>" % (
-                                            i['email']),
+                                        "<a href='adminmenu?user=%s' class='btn btn-info btn-sm'>User</a>" % (i[
+                                                                                                              'email']),
+                                        "<a href='adminmenu?moder=%s' class='btn btn-info btn-sm'>Moderator</a>" % (i[
+                                                                                                                    'email']),
+                                        "<a href='adminmenu?ban=%s' class='btn btn-danger btn-sm'>Ban</a>" % (i[
+                                                                                                    'email']),
                                         ""
                                     )
                             page = adminmenu % (table)
@@ -308,17 +320,21 @@ class myHandler(BaseHTTPRequestHandler):
                 self.cdb.upgradePermis(
                     cuser, parsed['user'], database.USER_LEVEL)
                 page = messagehtml % (
-                    'success', 'User ' + parsed['user']+' is now user')
+                    'success', 'User ' + parsed['user'] + ' is now user')
             elif 'moder' in parsed:
                 self.cdb.upgradePermis(
                     cuser, parsed['moder'], database.MOD_LEVEL)
                 page = messagehtml % (
-                    'success', 'User ' + parsed['moder']+' is now Moderator')
+                    'success', 'User ' + parsed['moder'] + ' is now Moderator')
             elif 'admin' in parsed:
                 self.cdb.upgradePermis(
                     cuser, parsed['admin'], database.ADMIN_LEVEL)
                 page = messagehtml % (
-                    'success', 'User ' + parsed['admin']+' is now Administrator')
+                    'success', 'User ' + parsed['admin'] + ' is now Administrator')
+            elif 'ban' in parsed:
+                self.cdb.banUser(cuser, parsed['ban'])
+                page = messagehtml % (
+                    'success', 'User ' + parsed['ban'] + ' is now Banned')
             return page
         else:
             raise BadUser("You have to log in to use this Page")
@@ -333,7 +349,7 @@ class myHandler(BaseHTTPRequestHandler):
             if cuser:
                 if self.cdb.checkPermission(cuser):
                     parsed = parseURL(self.path)
-                    if not 'allow' in parsed:
+                    if not parsed:
                         for item in self.cdb.getModPlugins():
                             if not item["TitleID"] == "Not game":
                                 name = getgamebytid(item["TitleID"])
@@ -348,14 +364,20 @@ class myHandler(BaseHTTPRequestHandler):
                                 item['devsite'],
                                 item['id'],
                                 item['id'],
+                                item['id'],
                                 item['id']
                             )
                         page = mod % (table)
-                    else:
+                    elif 'allow' in parsed:
                         plid = int(parsed['allow'])
                         self.cdb.allowPlugin(cuser, plid)
                         page = messagehtml % (
                             'success', 'Plugin was approved!')
+                    elif 'strike' in parsed:
+                        plid = int(parsed['strike'])
+                        self.cdb.strikeUser(cuser, plid)
+                        page = messagehtml % (
+                            'info', "The Plugin's uploader will recieve a strike")
                 else:
                     raise MissingPermission("Moderator")
             else:
@@ -436,7 +458,7 @@ class myHandler(BaseHTTPRequestHandler):
                     if self.cdb.checkPermission(cuser, database.ADMIN_LEVEL):
                         plglist = self.cdb.getAllPlugins()
                         for item in plglist:
-                            uplg.append(item['id'])
+                            uplg.append(item)
 
                 except MissingPermission as ex:
                     user = self.cdb.getUser(email=cuser)
@@ -449,7 +471,7 @@ class myHandler(BaseHTTPRequestHandler):
                     item = plugin['id']
                     table = table + \
                         links_mng % (
-                            plugin['name'], plugin['added'], item, item)
+                            plugin['name'], plugin['added'], plugin['id'], plugin['id'])
                 return managepage % table
             else:
                 raise BadUser(
@@ -692,9 +714,12 @@ class myHandler(BaseHTTPRequestHandler):
             elif luser["permissions"] <= database.MOD_LEVEL:
                 nbar = nbar_loggedin % (
                     cuser, '<a class="dropdown-item" href="mod">Moderation</a>', '')
-            else:
+            elif luser["permissions"] <= database.USER_LEVEL:
                 nbar = nbar_loggedin % (
                     cuser, '', '')
+            elif luser["permissions"] <= database.BAN_LEVEL:
+                page = self.logout()
+                speccall = True
         else:
             nbar = nbar_login
         if not rcookies:
@@ -762,6 +787,16 @@ class myHandler(BaseHTTPRequestHandler):
                     page = base % (
                         nbar, page, version, str(timer_stop - timer_start))
                     self.wfile.write(bytes(page, 'utf-8'))
+            except Banned as ex:
+                timer_stop = time()
+                self.send_response(500)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                page = base % (nbar, messagehtml %
+                               ('danger',
+                                'This account is Banned'),
+                               version, str(timer_stop - timer_start))
+                self.wfile.write(bytes(page, 'utf-8'))
             except BadUser as ex:
                 timer_stop = time()
                 self.send_response(500)
@@ -772,7 +807,6 @@ class myHandler(BaseHTTPRequestHandler):
                                 str(ex)),
                                version, str(timer_stop - timer_start))
                 self.wfile.write(bytes(page, 'utf-8'))
-                raise ex
             except SQLException as ex:
                 timer_stop = time()
                 self.send_response(500)
@@ -783,7 +817,6 @@ class myHandler(BaseHTTPRequestHandler):
                                 'The ' + str(ex) + ' requested was not found'),
                                version, str(timer_stop - timer_start))
                 self.wfile.write(bytes(page, 'utf-8'))
-                raise ex
             except MissingPermission as mp:
                 timer_stop = time()
                 self.send_response(500)
@@ -791,10 +824,9 @@ class myHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 page = base % (nbar, messagehtml %
                                ('danger',
-                                'You need to be an ' + str(mp) + ' to be able to use this page'),
+                                'You need to be an ' + str(mp) + ' to be able to use this page.'),
                                version, str(timer_stop - timer_start))
                 self.wfile.write(bytes(page, 'utf-8'))
-                raise mp
             except Exception as e:
                 timer_stop = time()
                 exc_type, exc_obj, tb = exc_info()
@@ -847,13 +879,20 @@ class myHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(
                     bytes(base % ("", messagehtml % ('danger', 'Bad request!'), version, str(timer_stop - timer_start)), 'utf-8'))
-        except Exception as e:
+        except Banned as ex:
+            timer_stop = time()
             self.send_response(500)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
-            page = base % (version, messagehtml %
-                           ('danger', 'Oops! An error occured when processing your request!'), "", "Error")
-            self.wfile.write(bytes(page, 'utf-8'))
+            self.wfile.write(
+                bytes(base % ("", messagehtml % ('danger', 'This account is Banned'), version, str(timer_stop - timer_start)), 'utf-8'))
+        except Exception as e:
+            timer_stop = time()
+            self.send_response(500)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(
+                bytes(base % ("", messagehtml % ('danger', 'Oops! An error occured when processing your request!'), version, str(timer_stop - timer_start)), 'utf-8'))
             raise e
 
 

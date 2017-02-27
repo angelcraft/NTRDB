@@ -293,7 +293,7 @@ class myHandler(BaseHTTPRequestHandler):
                                 "<a href='adminmenu?admin=%s' class='btn btn-info btn-sm'>Administrator</a>" % (i[
                                                                                                                 'email']),
                                 "<a href='adminmenu?ban=%s' class='btn btn-danger btn-sm'>Ban</a>" % (i[
-                                                                                                    'email'])
+                                    'email'])
                             )
                         page = adminmenu % (table)
 
@@ -310,7 +310,7 @@ class myHandler(BaseHTTPRequestHandler):
                                         "<a href='adminmenu?moder=%s' class='btn btn-info btn-sm'>Moderator</a>" % (i[
                                                                                                                     'email']),
                                         "<a href='adminmenu?ban=%s' class='btn btn-danger btn-sm'>Ban</a>" % (i[
-                                                                                                    'email']),
+                                            'email']),
                                         ""
                                     )
                             page = adminmenu % (table)
@@ -397,7 +397,7 @@ class myHandler(BaseHTTPRequestHandler):
                 plgp = parsed["link"]
                 titleid_str = parsed['tid'].upper()
                 titleid = parsed['tid'].upper().split(';')
-                #print(titleid)
+                # print(titleid)
                 plugname = parsed['name']
                 developer = parsed['developer']
                 devsite = parsed['devsite']
@@ -422,7 +422,7 @@ class myHandler(BaseHTTPRequestHandler):
                     message = "You havent entered plugin's name!"
                     badreq = True
                     succ = False
-                elif not url(plgp) or not url(pic) and not pic=='' or not url(devsite):
+                elif not url(plgp) or not url(pic) and not pic == '' or not url(devsite):
                     message = "You entered bad URL!"
                     badreq = True
                     succ = False
@@ -602,7 +602,7 @@ class myHandler(BaseHTTPRequestHandler):
         for item in self.cdb.getApproved():
             count = count + 1
             name = "For "
-            #print(item["TitleID"])
+            # print(item["TitleID"])
             if not item["TitleID"] == "Not game":
                 for game in item["TitleID"].split(";"):
                     name = name + getgamebytid(game) + ', '
@@ -640,7 +640,12 @@ class myHandler(BaseHTTPRequestHandler):
             )
         if count == 0:
             table = "<center><h3>No items :(</h3></center>"
-        page = index % (count, table)
+        u = self.checkAuth()[0]
+        if u:
+            u = "Welcome back, %s!" % (u)
+        else:
+            u = "Hello, Guest! How about <a href=\"#\" onclick=\"event.preventDefault();$('#reg').modal('toggle')\">registering</a> or <a href=\"#\" onclick=\"event.preventDefault();$('#login').modal('toggle')\">logging in?</a> :)"
+        page = index % (count, u, table)
         return page
 
     def description(self):
@@ -696,7 +701,6 @@ class myHandler(BaseHTTPRequestHandler):
         self.wfile.write(bytes(json.dumps(apidata), 'utf-8'))
 
 ###########################httplib zone########################################
-
 
     def do_GET(self):
         timer_start = time()
@@ -836,7 +840,7 @@ class myHandler(BaseHTTPRequestHandler):
                 line = linecache.getline(filename, lineno, f.f_globals)
                 errorinfo = "File: %s<br>Line: %s<br>Error: %s" % (
                     filename, lineno, type(e).__name__
-                    )
+                )
                 self.send_response(500)
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
@@ -846,6 +850,7 @@ class myHandler(BaseHTTPRequestHandler):
                                version, str(timer_stop - timer_start))
                 self.wfile.write(bytes(page, 'utf-8'))
                 raise e
+
     def do_POST(self):
         timer_start = time()
         self.cookie = parseCookie(dict(self.headers))

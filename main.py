@@ -599,6 +599,13 @@ class myHandler(BaseHTTPRequestHandler):
         isSearch = False
         parsed = parseURL(self.path)
         count = 0
+        cuser, _ = self.checkAuth()
+        if "like" in parsed:
+            if cuser:
+                user = self.cdb.getUser(cuser)
+                self.cdb.doLike(cuser, parsed['like'])
+            else:
+                raise BadUser("You have to login to like plugins")
         for item in self.cdb.getApproved():
             count = count + 1
             name = "For "
@@ -619,6 +626,15 @@ class myHandler(BaseHTTPRequestHandler):
                 pic = 'http://vignette1.wikia.nocookie.net/mario/images/6/61/Item_Box_(Mario_Kart_8).png/revision/latest/scale-to-width-down/550?cb=20140505194326'
             else:
                 pic = item['pic']
+            if cuser:
+                user = self.cdb.getUser(email=cuser)
+                if item['id'] in user['likes']:
+                    like = "<li class='list-group-item'><a href='index?like=%s'><i class= 'fa fa-%s' arua-hedden='true'></i> %sLike %s</a></li>" % (item['id'], "heart-o", "Un", item['likes'])
+                else:
+                    like = "<li class='list-group-item'><a href='index?like=%s'><i class= 'fa fa-%s' arua-hedden='true'></i> %sLike %s</a></li>" % (item['id'], "heart", "", item['likes'])
+            else:
+                like = ''
+
             table = table + links % (
                 count,
                 item['name'],
@@ -634,6 +650,7 @@ class myHandler(BaseHTTPRequestHandler):
                 count,
                 item['plg'],
                 item['devsite'],
+                like,
                 cpbicon,
                 item["added"],
                 item['id'],

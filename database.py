@@ -22,7 +22,8 @@ PLUGIN_INFO = {'id': False,
                'compatible': True,
                'pic': True,
                'approved': True,
-               'uploader': False}
+               'uploader': False,
+               'likes': False}
 
 USER_INFO = {'uuid': False,
              'email': True,
@@ -32,7 +33,8 @@ USER_INFO = {'uuid': False,
              'permissions': False,
              'banned': True,
              'strikes': True,
-             'passwd': True}
+             'passwd': True,
+             'likes': True}
 
 OWNER_LEVEL = 0
 ADMIN_LEVEL = 1
@@ -73,7 +75,8 @@ class database():
                   'compatible': dsver,
                   'pic': picture,
                   'approved': approved,
-                  'uploader': uploader}
+                  'uploader': uploader,
+                  'likes': 0}
         newid = self.plugins.insert(plugin)
         user['plugins'].append(newid)
         self.setUser(user)
@@ -166,6 +169,35 @@ class database():
         else:
             raise MissingPermission("Admin or Uploader")
 
+    def likePlugin(self, user, pid):
+        user = self.getUser(email=user)
+        plugin = self.getPlugin(pid=pid)
+        if plugin!=None:
+            user['likes'].append(plugin['id'])
+            plugin['likes']+=1
+            self.setUser(user)
+            self.setPlugin(plugin)
+        else:
+            raise SQLException("Plugin Id")
+
+    def unlikePlugin(self, user, pid):
+        user = self.getUser(email=user)
+        plugin = self.getPlugin(pid=pid)
+        if plugin!=None:
+            del user['likes'][user['likes'].index(plugin['id'])]
+            plugin['likes']-=1
+            self.setUser(user)
+            self.setPlugin(plugin)
+        else:
+            raise SQLException("Plugin Id")
+
+    def doLike(self, user, pid):
+        luser = self.getUser(email=user)
+        if int(pid) in luser['likes']:
+            self.unlikePlugin(user, pid)
+        else:
+            self.likePlugin(user, pid)
+
 #######################################USER###############################
     def computeMD5hash(self, string):
         m = hashlib.sha512()
@@ -183,7 +215,8 @@ class database():
                 'activate': False,
                 'permissions': USER_LEVEL,
                 'banned': False,
-                'strikes': -1}
+                'strikes': -1,
+                'likes': "[]"}
         self.users.insert(user)
         return user
 
@@ -309,6 +342,7 @@ class database():
         user = self.users.find_one(email=email)
         if user != None:
             user["plugins"] = json.loads(user['plugins'])
+            user["likes"] = json.loads(user['likes'])
         return user
 
     def getUserUuid(self, uuid):
@@ -325,6 +359,7 @@ class database():
 
     def setUser(self, user):
         user['plugins'] = json.dumps(user['plugins'])
+        user['likes'] = json.dumps(user['likes'])
         self.users.update(user, ['email'])
 
     def createOwner(self, user, password):
@@ -341,7 +376,8 @@ class database():
                     'activate': True,
                     'permissions': OWNER_LEVEL,
                     'banned': False,
-                    'strikes': -1}
+                    'strikes': -1,
+                    'likes': "[]"}
             self.users.insert(user)
 
 #-----------------------------Plugins----------------------------------#

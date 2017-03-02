@@ -629,9 +629,9 @@ class myHandler(BaseHTTPRequestHandler):
             if cuser:
                 user = self.cdb.getUser(email=cuser)
                 if item['id'] in user['likes']:
-                    like = "<li class='list-group-item'><a href='index?like=%s'><i class= 'fa fa-%s' arua-hedden='true'></i> %sLike %s</a></li>" % (item['id'], "heart-o", "Un", item['likes'])
+                    like = "<li class='list-group-item'><a href='index?like=%s#%s'><i class= 'fa fa-%s fa-fw' arua-hedden='true'></i> %sLike %s</a></li>" % (item['id'], item['id'], "heart-o", "Un", item['likes'])
                 else:
-                    like = "<li class='list-group-item'><a href='index?like=%s'><i class= 'fa fa-%s' arua-hedden='true'></i> %sLike %s</a></li>" % (item['id'], "heart", "", item['likes'])
+                    like = "<li class='list-group-item'><a href='index?like=%s#%s'><i class= 'fa fa-%s fa-fw' arua-hedden='true'></i> %sLike %s</a></li>" % (item['id'], item['id'], "heart", "", item['likes'])
             else:
                 like = ''
 

@@ -667,6 +667,21 @@ class myHandler(BaseHTTPRequestHandler):
         page = index % (count, u, table)
         return page
 
+    def themeswitch(self):
+        user = self.checkAuth()[0]
+        if user:
+            parsed = parseURL(self.path)
+            if len(parsed) > 0:
+                pass
+            else:
+                table = ''
+                for item in themes:
+                    table = table + links_thememenu % (item, item)
+                page = thememenu % (table)
+                return page
+        else:
+            return messagehtml % (danger, 'You must be logged in to use themes!')
+
     def description(self):
         parsed = parseURL(self.path)
         if "pid" in parsed:
@@ -756,9 +771,13 @@ class myHandler(BaseHTTPRequestHandler):
                     speccall = True
                     user = self.checkAuth()[0]
                     if not user:
-                        theme = themes['Bootstrap']
-                    else:
                         theme = themes['Sandstone']
+                    else:
+                        if uthemes[user] in themes:
+                            theme = themes[uthemes[user]]
+                        else:
+                            # Fallback to default theme
+                            theme = themes['Sandstone']
                     self.send_response(200)
                     self.send_header('Content-type', 'text/css')
                     self.end_headers()
@@ -766,6 +785,8 @@ class myHandler(BaseHTTPRequestHandler):
                 if self.path.startswith('/api'):
                     speccall = True
                     self.api()
+                if self.path.startswith('/themes'):
+                    page = self.themeswitch()
                 elif self.path.startswith('/additem'):
                     page = self.additem()
                 elif self.path.startswith('/description'):

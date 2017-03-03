@@ -633,7 +633,7 @@ class myHandler(BaseHTTPRequestHandler):
                 else:
                     like = "<li class='list-group-item'><a href='index?like=%s#%s'><i class= 'fa fa-%s fa-fw' arua-hedden='true'></i> %sLike %s</a></li>" % (item['id'], item['id'], "heart", "", item['likes'])
             else:
-                like = ''
+                like = "<li class='list-group-item'><a><i class= 'fa fa-%s fa-fw' arua-hedden='true'></i> %sLikes: %s</a></li>" % ("heart", "", item['likes'])
 
             table = table + links % (
                 count,

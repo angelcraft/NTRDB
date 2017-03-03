@@ -20,7 +20,7 @@ from time import time
 import argparse
 from loader import *
 #import dataset
-from subprocess import DEVNULL
+from os import devnull
 from sys import exc_info
 from custom_exception import MissingPermission, SQLException, BadUser, Banned
 import database
@@ -28,7 +28,7 @@ import database
 ##################################config vairables########################
 
 ##########################################################################
-
+DEVNULL = open(devnull, 'w')
 parser = argparse.ArgumentParser()
 parser.add_argument('-p', '--port', type=int,
                     help='Port for receiving requests', required=False)
@@ -794,10 +794,7 @@ class myHandler(BaseHTTPRequestHandler):
                     self.send_header('Content-type', 'text/css')
                     self.end_headers()
                     self.wfile.write(theme)
-                    try:
-                        print(theme, file=DEVNULL)  # HACK: Without it CSS file wont get sent. That is really strange
-                    except AttributeError:
-                        pass  # HACK FOR HACK. NOICE!
+                    print(theme, file=DEVNULL)  # HACK: Without it CSS file wont get sent. That is really strange
                 elif self.path.startswith('/error'):
                     1 / 0  # LIKE
                 elif self.path.startswith('/rm'):

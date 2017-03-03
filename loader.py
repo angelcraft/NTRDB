@@ -39,10 +39,10 @@ with open('resources/Icon_New.png', 'rb') as f:
     inew = str(b64encode(f.read()), 'utf-8')
 with open('resources/Icon_Old.png', 'rb') as f:
     iold = str(b64encode(f.read()), 'utf-8')
-with open('html/light.css', 'rb') as f:
-    lighttheme = f.read()
-with open('html/dark.css', 'rb') as f:
-    darktheme = f.read()
+with open('html/bootstrap.css.map', 'rb') as f:
+    bsdefmap = f.read()
+with open('html/BootstrapDefault.css', 'rb') as f:
+    bsdef = f.read()
 with open('html/adminmenu.html') as f:
     adminmenu = f.read()
 with open('html/links_adminmenu.html') as f:

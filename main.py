@@ -779,18 +779,17 @@ class myHandler(BaseHTTPRequestHandler):
                     self.send_header('Content-type', 'image/png')
                     self.end_headers()
                     self.wfile.write(icon)
-                elif self.path.startswith('/light.css'):
+                elif self.path.startswith('/bootstrap.css.map'):
+                    speccall = True
+                    self.send_response(200)
+                    self.end_headers()
+                    self.wfile.write(bsdefmap)
+                elif self.path.startswith('/bst.css'):
                     speccall = True
                     self.send_response(200)
                     self.send_header('Content-type', 'text/css')
                     self.end_headers()
-                    self.wfile.write(lighttheme)
-                elif self.path.startswith('/dark.css'):
-                    speccall = True
-                    self.send_response(200)
-                    self.send_header('Content-type', 'text/css')
-                    self.end_headers()
-                    self.wfile.write(darktheme)
+                    self.wfile.write(bsdef)
                 elif self.path.startswith('/error'):
                     1 / 0  # LIKE
                 elif self.path.startswith('/rm'):

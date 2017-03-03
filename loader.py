@@ -1,4 +1,5 @@
 from base64 import b64encode
+themes = {}
 with open('resources/favicon.png', 'rb') as f:
     icon = f.read()
 with open('html/error.html') as f:
@@ -42,7 +43,9 @@ with open('resources/Icon_Old.png', 'rb') as f:
 with open('html/bootstrap.css.map', 'rb') as f:
     bsdefmap = f.read()
 with open('html/BootstrapDefault.css', 'rb') as f:
-    bsdef = f.read()
+    themes['Bootstrap'] = f.read()
+with open('html/NTRDB.min.css', 'rb') as f:
+    themes['Sandstone'] = f.read()
 with open('html/adminmenu.html') as f:
     adminmenu = f.read()
 with open('html/links_adminmenu.html') as f:

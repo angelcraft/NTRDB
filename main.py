@@ -20,6 +20,7 @@ from time import time
 import argparse
 from loader import *
 #import dataset
+from subprocess import DEVNULL
 from sys import exc_info
 from custom_exception import MissingPermission, SQLException, BadUser, Banned
 import database
@@ -779,17 +780,24 @@ class myHandler(BaseHTTPRequestHandler):
                     self.send_header('Content-type', 'image/png')
                     self.end_headers()
                     self.wfile.write(icon)
-                elif self.path.startswith('/bootstrap.css.map'):
-                    speccall = True
+                elif self.path.endswith('/bootstrap.css.map'):
                     self.send_response(200)
                     self.end_headers()
                     self.wfile.write(bsdefmap)
-                elif self.path.startswith('/bst.css'):
+                elif self.path.startswith('/bstheme.css'):
                     speccall = True
+                    if not self.checkAuth()[0]:
+                        theme = themes['Bootstrap']
+                    else:
+                        theme = themes['Sandstone']
                     self.send_response(200)
                     self.send_header('Content-type', 'text/css')
                     self.end_headers()
-                    self.wfile.write(bsdef)
+                    self.wfile.write(theme)
+                    try:
+                        print(theme, file=DEVNULL)  # HACK: Without it CSS file wont get sent. That is really strange
+                    except AttributeError:
+                        pass  # HACK FOR HACK. NOICE!
                 elif self.path.startswith('/error'):
                     1 / 0  # LIKE
                 elif self.path.startswith('/rm'):

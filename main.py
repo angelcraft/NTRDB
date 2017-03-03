@@ -48,6 +48,7 @@ print("DONE!")
 version = str(
     check_output('git log -n 1 --pretty=format:"%h"', shell=True), 'utf-8')
 sessions = {}
+uthemes  = {}
 
 
 def computeMD5hash(string):
@@ -751,6 +752,17 @@ class myHandler(BaseHTTPRequestHandler):
                     self.send_header('Content-type', 'text/plain')
                     self.end_headers()
                     self.wfile.write(robots)
+                elif self.path.startswith('/bstheme.css'):
+                    speccall = True
+                    user = self.checkAuth()[0]
+                    if not user:
+                        theme = themes['Bootstrap']
+                    else:
+                        theme = themes['Sandstone']
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/css')
+                    self.end_headers()
+                    self.wfile.write(theme)
                 if self.path.startswith('/api'):
                     speccall = True
                     self.api()
@@ -780,21 +792,6 @@ class myHandler(BaseHTTPRequestHandler):
                     self.send_header('Content-type', 'image/png')
                     self.end_headers()
                     self.wfile.write(icon)
-                elif self.path.endswith('/bootstrap.css.map'):
-                    self.send_response(200)
-                    self.end_headers()
-                    self.wfile.write(bsdefmap)
-                elif self.path.startswith('/bstheme.css'):
-                    speccall = True
-                    if not self.checkAuth()[0]:
-                        theme = themes['Bootstrap']
-                    else:
-                        theme = themes['Sandstone']
-                    self.send_response(200)
-                    self.send_header('Content-type', 'text/css')
-                    self.end_headers()
-                    self.wfile.write(theme)
-                    print(theme, file=DEVNULL)  # HACK: Without it CSS file wont get sent. That is really strange
                 elif self.path.startswith('/error'):
                     1 / 0  # LIKE
                 elif self.path.startswith('/rm'):
@@ -858,7 +855,6 @@ class myHandler(BaseHTTPRequestHandler):
                 lineno = tb.tb_lineno
                 filename = f.f_code.co_filename
                 linecache.checkcache(filename)
-                line = linecache.getline(filename, lineno, f.f_globals)
                 errorinfo = "File: %s<br>Line: %s<br>Error: %s" % (
                     filename, lineno, type(e).__name__
                 )

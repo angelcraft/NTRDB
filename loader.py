@@ -40,8 +40,6 @@ with open('resources/Icon_New.png', 'rb') as f:
     inew = str(b64encode(f.read()), 'utf-8')
 with open('resources/Icon_Old.png', 'rb') as f:
     iold = str(b64encode(f.read()), 'utf-8')
-with open('html/bootstrap.css.map', 'rb') as f:
-    bsdefmap = f.read()
 with open('html/BootstrapDefault.css', 'rb') as f:
     themes['Bootstrap'] = f.read()
 with open('html/NTRDB.min.css', 'rb') as f:

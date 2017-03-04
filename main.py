@@ -260,9 +260,8 @@ class myHandler(BaseHTTPRequestHandler):
                              (self.cookie['AToken'], 'Expires=Wed, 21 Oct 2007 07:28:00 GMT'))
             self.send_header('Content-type', 'text/html')
             self.end_headers()
-            page = bytes(messagehtml % ('success', 'You logged out'), 'utf-8')
-            self.wfile.write(bytes((base % (
-                version, page + b'<meta http-equiv="refresh" content="1; URL=index">', '', str(1))), 'utf-8'))
+            page = messagehtml % ('success', 'You logged out')
+            self.wfile.write(bytes(base % ('', page, version, '0'), 'utf-8'))
             del sessions[computeMD5hash(self.cookie['AToken'])]
         else:
             page = base % ('', messagehtml % ('danger', "<center><figure class=\"figure\">"

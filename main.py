@@ -1,3 +1,4 @@
+from urllib.parse import urlencode
 import linecache
 import smtplib
 from email.mime.text import MIMEText
@@ -48,7 +49,7 @@ print("DONE!")
 version = str(
     check_output('git log -n 1 --pretty=format:"%h"', shell=True), 'utf-8')
 sessions = {}
-uthemes  = {}
+uthemes = {}
 
 
 def computeMD5hash(string):
@@ -672,15 +673,20 @@ class myHandler(BaseHTTPRequestHandler):
         if user:
             parsed = parseURL(self.path)
             if len(parsed) > 0:
-                pass
+                if parsed['theme'] in themes:
+                    uthemes[user] = parsed['theme']
+                    return messagehtml % ('success', 'Your theme was switched!')
+                else:
+                    return messagehtml % ('danger', 'Looks like theme you chosen is bad :(')
             else:
                 table = ''
                 for item in themes:
-                    table = table + links_thememenu % (item, item)
+                    link = {'theme': item}
+                    table = table + links_thememenu % (item, urlencode(link))
                 page = thememenu % (table)
                 return page
         else:
-            return messagehtml % (danger, 'You must be logged in to use themes!')
+            return messagehtml % ('danger', escape('You must be logged in to use themes!'))
 
     def description(self):
         parsed = parseURL(self.path)
@@ -771,13 +777,18 @@ class myHandler(BaseHTTPRequestHandler):
                     speccall = True
                     user = self.checkAuth()[0]
                     if not user:
-                        theme = themes['Sandstone']
+                        theme = themes['NTRDB(Cosmo)']
                     else:
-                        if uthemes[user] in themes:
-                            theme = themes[uthemes[user]]
+                        if user in uthemes:
+                            if uthemes[user] in themes:
+                                print(uthemes[user])
+                                theme = themes[uthemes[user]]
+                            else:
+                                # Fallback to default theme
+                                theme = themes['NTRDB(Cosmo)']
                         else:
-                            # Fallback to default theme
-                            theme = themes['Sandstone']
+                            theme = themes['NTRDB(Cosmo)']
+                    print(uthemes)
                     self.send_response(200)
                     self.send_header('Content-type', 'text/css')
                     self.end_headers()
@@ -807,12 +818,18 @@ class myHandler(BaseHTTPRequestHandler):
                     speccall = True
                 elif self.path.startswith('/edit'):
                     page = self.edit()
-                elif self.path.startswith('/favicon'):
+                elif self.path.startswith('/icon'):
                     speccall = True
                     self.send_response(200)
                     self.send_header('Content-type', 'image/png')
                     self.end_headers()
                     self.wfile.write(icon)
+                elif self.path.startswith('/favicon'):
+                    speccall = True
+                    self.send_response(200)
+                    self.send_header('Content-type', 'image/png')
+                    self.end_headers()
+                    self.wfile.write(favicon)
                 elif self.path.startswith('/error'):
                     1 / 0  # LIKE
                 elif self.path.startswith('/rm'):

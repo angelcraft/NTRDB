@@ -54,6 +54,32 @@
          display: block;
          width: 90%%;
          }
+         #themesw {
+            animation-name: themesw;
+            animation-duration: 5s;
+            animation-timing-function: ease-in;
+            animation-iteration-count: infinite;
+         }
+         @keyframes themesw {
+            0%% {
+               color: inherit;
+            }
+            25%% {
+               color: green;
+            }
+            50%% {
+               color: orange;
+            }
+            75%% {
+               color: blue;
+            }
+            95%% {
+               color: red;
+            }
+            100%% {
+               color:inherit;
+            }
+         }
          :target {
          animation-name: colorswitch;
          animation-duration: 0.5s;
@@ -61,15 +87,15 @@
          animation-iteration-count: 3;
          }
          @keyframes colorswitch {
-         0%% {
-         background-color: inherit;
-         }
-         50%% {
-         background-color: orange;
-         }
-         100%% {
-         background-color: inherit;
-         }
+            0%% {
+            background-color: inherit;
+            }
+            50%% {
+            background-color: orange;
+            }
+            100%% {
+            background-color: inherit;
+            }
          }
          @media (max-width: 575px) { 
          .card {
@@ -178,7 +204,7 @@
          <span class="navbar-toggler-icon"></span>
          </button>
          <a class="navbar-brand" href="index">
-         <img src="/favicon" width="30" height="30" class="d-inline-block align-top" alt="">
+         <img src="/icon" width="30" height="30" class="d-inline-block align-top" alt="">
          NTR Plugin database
          </a>
          <div class="collapse navbar-collapse" id="navbarsExampleDefault">
@@ -207,15 +233,16 @@
             %s
             <p></p>
          </div>
-         <footer>
-            <div class="container">
-               <a href="http://github.com/octonezd/ntrdb">Based on commit:%s</a>
-               <a href="https://github.com/OctoNezd/NTRDB/blob/master/LICENSE">License</a>
-               <a href="https://money.yandex.ru/to/410014628602465?_openstat=template%%3Bipulldown%%3Btopupme">Donate :^)</a>
-               <a style="text-align: right;">Page generated in %s seconds</a>
-            </div>
-         </footer>
+         
       </div>
+      <footer class="footer">
+         <div class="container">
+            <a href="http://github.com/octonezd/ntrdb">Based on commit:%s</a>
+            <a href="https://github.com/OctoNezd/NTRDB/blob/master/LICENSE">License</a>
+            <a href="https://money.yandex.ru/to/410014628602465?_openstat=template%%3Bipulldown%%3Btopupme">Donate :^)</a>
+            <a style="text-align: right;">Page generated in %s seconds</a>
+         </div>
+      </footer>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
       <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
       <script type="text/javascript">

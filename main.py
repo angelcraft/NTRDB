@@ -737,7 +737,7 @@ class myHandler(BaseHTTPRequestHandler):
             del item["uploader"]
             del item["approved"]
             apidata.append(item)
-        self.wfile.write(bytes(json.dumps(apidata), 'utf-8'))
+        self.wfile.write(bytes(json.dumps(apidata, sort_keys=True, indent=2), 'utf-8'))
 
 ###########################httplib zone########################################
 

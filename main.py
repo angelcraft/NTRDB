@@ -628,6 +628,7 @@ class myHandler(BaseHTTPRequestHandler):
                 pic = 'http://vignette1.wikia.nocookie.net/mario/images/6/61/Item_Box_(Mario_Kart_8).png/revision/latest/scale-to-width-down/550?cb=20140505194326'
             else:
                 pic = item['pic']
+            """
             if cuser:
                 user = self.cdb.getUser(email=cuser)
                 if item['id'] in user['likes']:
@@ -636,7 +637,8 @@ class myHandler(BaseHTTPRequestHandler):
                     like = "<li class='list-group-item'><a href='index?like=%s#%s'><i class= 'fa fa-%s fa-fw' arua-hedden='true'></i> %sLike %s</a></li>" % (item['id'], item['id'], "heart", "", item['likes'])
             else:
                 like = "<li class='list-group-item'><a><i class= 'fa fa-%s fa-fw' arua-hedden='true'></i> %sLikes: %s</a></li>" % ("heart", "", item['likes'])
-
+            """
+            like = ''
             table = table + links % (
                 count,
                 item['name'],

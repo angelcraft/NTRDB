@@ -1,4 +1,5 @@
 import dataset
+import json
 
 db = dataset.connect("sqlite:///plugs.db")
 table = db.get_table(
@@ -11,7 +12,7 @@ plugins.insert({"likes": -88}, ensure=['likes'])
 plugins.delete(likes=-88)
 
 for i in table.all():
-    i['likes'] = "[]"
+    i['likes'] = json.dumps([])
     table.update(i, ['email'], ensure=['likes'])
 for i in plugins.all():
     i['likes'] = 0

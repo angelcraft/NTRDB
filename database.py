@@ -377,7 +377,7 @@ class database():
                     'permissions': OWNER_LEVEL,
                     'banned': False,
                     'strikes': -1,
-                    'likes': "[]"}
+                    'likes': json.dumps([])}
             self.users.insert(user)
 
 #-----------------------------Plugins----------------------------------#

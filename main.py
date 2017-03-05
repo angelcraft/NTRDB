@@ -661,7 +661,7 @@ class myHandler(BaseHTTPRequestHandler):
             table = "<center><h3>No items :(</h3></center>"
         u = self.checkAuth()[0]
         if u:
-            u = "Welcome back, %s!" % (u)
+            u = "Welcome back, %s!" % (str(u))
         else:
             u = "Hello, Guest! How about <a href=\"#\" onclick=\"event.preventDefault();$('#reg').modal('toggle')\">registering</a> or <a href=\"#\" onclick=\"event.preventDefault();$('#login').modal('toggle')\">logging in?</a> :)"
         page = index % (count, u, table)

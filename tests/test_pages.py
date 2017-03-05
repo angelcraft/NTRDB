@@ -20,6 +20,15 @@ def login():
         return opener
 
 
+def test_thm():
+    opener = login()
+    managetest = opener.open('http://127.0.0.1:8080/themes')
+    if not "Themes" in str(managetest.read(), 'utf-8'):
+        raise exceptions.BadPage
+    else:
+        assert True
+
+
 def test_mg():
     opener = login()
     managetest = opener.open('http://127.0.0.1:8080/manageitems')

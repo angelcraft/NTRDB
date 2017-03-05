@@ -1,3 +1,4 @@
+from urllib.parse import urlencode
 import linecache
 import smtplib
 from email.mime.text import MIMEText
@@ -20,6 +21,7 @@ from time import time
 import argparse
 from loader import *
 #import dataset
+from os import devnull
 from sys import exc_info
 from custom_exception import MissingPermission, SQLException, BadUser, Banned
 import database
@@ -27,7 +29,7 @@ import database
 ##################################config vairables########################
 
 ##########################################################################
-
+DEVNULL = open(devnull, 'w')
 parser = argparse.ArgumentParser()
 parser.add_argument('-p', '--port', type=int,
                     help='Port for receiving requests', required=False)
@@ -47,6 +49,7 @@ print("DONE!")
 version = str(
     check_output('git log -n 1 --pretty=format:"%h"', shell=True), 'utf-8')
 sessions = {}
+uthemes = {}
 
 
 def computeMD5hash(string):
@@ -257,9 +260,8 @@ class myHandler(BaseHTTPRequestHandler):
                              (self.cookie['AToken'], 'Expires=Wed, 21 Oct 2007 07:28:00 GMT'))
             self.send_header('Content-type', 'text/html')
             self.end_headers()
-            page = bytes(messagehtml % ('success', 'You logged out'), 'utf-8')
-            self.wfile.write(bytes((base % (
-                version, page + b'<meta http-equiv="refresh" content="1; URL=index">', '', str(1))), 'utf-8'))
+            page = messagehtml % ('success', 'You logged out')
+            self.wfile.write(bytes(base % ('', page, version, '0'), 'utf-8'))
             del sessions[computeMD5hash(self.cookie['AToken'])]
         else:
             page = base % ('', messagehtml % ('danger', "<center><figure class=\"figure\">"
@@ -629,11 +631,11 @@ class myHandler(BaseHTTPRequestHandler):
             if cuser:
                 user = self.cdb.getUser(email=cuser)
                 if item['id'] in user['likes']:
-                    like = "<li class='list-group-item'><a href='index?like=%s'><i class= 'fa fa-%s' arua-hedden='true'></i> %sLike %s</a></li>" % (item['id'], "heart-o", "Un", item['likes'])
+                    like = "<li class='list-group-item'><a href='index?like=%s#%s'><i class= 'fa fa-%s fa-fw' arua-hedden='true'></i> %sLike %s</a></li>" % (item['id'], item['id'], "heart-o", "Un", item['likes'])
                 else:
-                    like = "<li class='list-group-item'><a href='index?like=%s'><i class= 'fa fa-%s' arua-hedden='true'></i> %sLike %s</a></li>" % (item['id'], "heart", "", item['likes'])
+                    like = "<li class='list-group-item'><a href='index?like=%s#%s'><i class= 'fa fa-%s fa-fw' arua-hedden='true'></i> %sLike %s</a></li>" % (item['id'], item['id'], "heart", "", item['likes'])
             else:
-                like = ''
+                like = "<li class='list-group-item'><a><i class= 'fa fa-%s fa-fw' arua-hedden='true'></i> %sLikes: %s</a></li>" % ("heart", "", item['likes'])
 
             table = table + links % (
                 count,
@@ -664,6 +666,26 @@ class myHandler(BaseHTTPRequestHandler):
             u = "Hello, Guest! How about <a href=\"#\" onclick=\"event.preventDefault();$('#reg').modal('toggle')\">registering</a> or <a href=\"#\" onclick=\"event.preventDefault();$('#login').modal('toggle')\">logging in?</a> :)"
         page = index % (count, u, table)
         return page
+
+    def themeswitch(self):
+        user = self.checkAuth()[0]
+        if user:
+            parsed = parseURL(self.path)
+            if len(parsed) > 0:
+                if parsed['theme'] in themes:
+                    uthemes[user] = parsed['theme']
+                    return messagehtml % ('success', 'Your theme was switched!')
+                else:
+                    return messagehtml % ('danger', 'Looks like theme you chosen is bad :(')
+            else:
+                table = ''
+                for item in themes:
+                    link = {'theme': item}
+                    table = table + links_thememenu % (item, urlencode(link))
+                page = thememenu % (table)
+                return page
+        else:
+            return messagehtml % ('danger', escape('You must be logged in to use themes!'))
 
     def description(self):
         parsed = parseURL(self.path)
@@ -715,7 +737,7 @@ class myHandler(BaseHTTPRequestHandler):
             del item["uploader"]
             del item["approved"]
             apidata.append(item)
-        self.wfile.write(bytes(json.dumps(apidata), 'utf-8'))
+        self.wfile.write(bytes(json.dumps(apidata, sort_keys=True, indent=2), 'utf-8'))
 
 ###########################httplib zone########################################
 
@@ -750,9 +772,29 @@ class myHandler(BaseHTTPRequestHandler):
                     self.send_header('Content-type', 'text/plain')
                     self.end_headers()
                     self.wfile.write(robots)
+                elif self.path.startswith('/bstheme.css'):
+                    speccall = True
+                    user = self.checkAuth()[0]
+                    if not user:
+                        theme = themes['NTRDB(Cosmo)']
+                    else:
+                        if user in uthemes:
+                            if uthemes[user] in themes:
+                                theme = themes[uthemes[user]]
+                            else:
+                                # Fallback to default theme
+                                theme = themes['NTRDB(Cosmo)']
+                        else:
+                            theme = themes['NTRDB(Cosmo)']
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/css')
+                    self.end_headers()
+                    self.wfile.write(theme)
                 if self.path.startswith('/api'):
                     speccall = True
                     self.api()
+                if self.path.startswith('/themes'):
+                    page = self.themeswitch()
                 elif self.path.startswith('/additem'):
                     page = self.additem()
                 elif self.path.startswith('/description'):
@@ -773,24 +815,18 @@ class myHandler(BaseHTTPRequestHandler):
                     speccall = True
                 elif self.path.startswith('/edit'):
                     page = self.edit()
-                elif self.path.startswith('/favicon'):
+                elif self.path.startswith('/icon'):
                     speccall = True
                     self.send_response(200)
                     self.send_header('Content-type', 'image/png')
                     self.end_headers()
                     self.wfile.write(icon)
-                elif self.path.startswith('/light.css'):
+                elif self.path.startswith('/favicon'):
                     speccall = True
                     self.send_response(200)
-                    self.send_header('Content-type', 'text/css')
+                    self.send_header('Content-type', 'image/png')
                     self.end_headers()
-                    self.wfile.write(lighttheme)
-                elif self.path.startswith('/dark.css'):
-                    speccall = True
-                    self.send_response(200)
-                    self.send_header('Content-type', 'text/css')
-                    self.end_headers()
-                    self.wfile.write(darktheme)
+                    self.wfile.write(favicon)
                 elif self.path.startswith('/error'):
                     1 / 0  # LIKE
                 elif self.path.startswith('/rm'):
@@ -854,7 +890,6 @@ class myHandler(BaseHTTPRequestHandler):
                 lineno = tb.tb_lineno
                 filename = f.f_code.co_filename
                 linecache.checkcache(filename)
-                line = linecache.getline(filename, lineno, f.f_globals)
                 errorinfo = "File: %s<br>Line: %s<br>Error: %s" % (
                     filename, lineno, type(e).__name__
                 )

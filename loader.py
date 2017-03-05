@@ -1,5 +1,9 @@
+from os import listdir
 from base64 import b64encode
+themes = {}
 with open('resources/favicon.png', 'rb') as f:
+    favicon = f.read()
+with open('resources/icon.png', 'rb') as f:
     icon = f.read()
 with open('html/error.html') as f:
     error = f.read()
@@ -39,14 +43,17 @@ with open('resources/Icon_New.png', 'rb') as f:
     inew = str(b64encode(f.read()), 'utf-8')
 with open('resources/Icon_Old.png', 'rb') as f:
     iold = str(b64encode(f.read()), 'utf-8')
-with open('html/light.css', 'rb') as f:
-    lighttheme = f.read()
-with open('html/dark.css', 'rb') as f:
-    darktheme = f.read()
+for item in listdir('html/themes'):
+    with open('html/themes/%s' % item, 'rb') as f:
+        themes[item[:-4]] = f.read()
 with open('html/adminmenu.html') as f:
     adminmenu = f.read()
 with open('html/links_adminmenu.html') as f:
     links_adminmenu = f.read()
+with open('html/thememenu.html') as f:
+    thememenu = f.read()
+with open('html/links_thememenu.html') as f:
+    links_thememenu = f.read()
 with open('resources/robots.txt', 'rb') as f:
     robots = f.read()
 print("Pages loaded")

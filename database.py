@@ -216,7 +216,7 @@ class database():
                 'permissions': USER_LEVEL,
                 'banned': False,
                 'strikes': -1,
-                'likes': "[]"}
+                'likes': json.dumps([])}
         self.users.insert(user)
         return user
 
@@ -349,6 +349,7 @@ class database():
         user = self.users.find_one(uuid=uuid)
         if user != None:
             user["plugins"] = json.loads(user["plugins"])
+            user["likes"] = json.loads(user["likes"])
         return user
 
     def getAllUsers(self):

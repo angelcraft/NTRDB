@@ -733,6 +733,7 @@ class myHandler(BaseHTTPRequestHandler):
     def api(self):
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
         apidata = []
         for item in self.cdb.getApproved():

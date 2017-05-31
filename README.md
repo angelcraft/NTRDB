@@ -1,4 +1,5 @@
 # NTRDB
+# !!!Discontinued!!!
 ## NTR plugins database
 [![Build Status](https://travis-ci.org/OctoNezd/NTRDB.svg?branch=master)](https://travis-ci.org/OctoNezd/NTRDB)
 ### API
